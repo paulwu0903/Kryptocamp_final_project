@@ -6,11 +6,26 @@ import "../../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 import "../../lib/openzeppelin-contracts/contracts/utils/cryptography/MerkleProof.sol";
 import "../../lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 
-contract TrendMasterNFT is ERC721A, Ownable{
+import "../../lib/openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
+import "../ERC20/TrendToken.sol";
+
+contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
 
     using Strings for uint256;
 
-    //TODO: 白名單地址有哪些尚未完成
+    //TODO: 白名單地址要設定哪些來測試
+
+    enum StakeState{
+        STAKED, UNSTAKED
+    }
+
+    struct StakeInfo{
+        StakeState stakeState; //質押狀態
+        uint256 startStakeTime; //開始質押時間
+        uint256 interest; //利息
+    }
+
+    mapping (uint256 => StakeInfo) stakeMapping; // 記錄是否stake
 
 
     //荷蘭拍參數定義
@@ -26,7 +41,9 @@ contract TrendMasterNFT is ERC721A, Ownable{
     struct WhitelistMintParam{
         uint256 whitelistMintTime; //白名單開賣時間
         uint256 whitelistMintPrice; //白名單售價
+        uint8 whitelistMintLimit; //白名單帳號Mint數量限制
         bytes32 whitelistMerkleTreeRoot; //白名單Merkle Tree Root
+        
     }
 
     //開盲參數
@@ -42,10 +59,16 @@ contract TrendMasterNFT is ERC721A, Ownable{
 
     uint256 contractCreateTime;
 
+    //檢查是否超出最大供給量
+    modifier checkOverMaxSupply(uint256 _quentity){
+        require(totalSupply() + _quentity <= maxSupply, "Over the max supply.");
+        _;
+    }
+
     constructor () ERC721A ("TrendMaster", "TM"){
         contractCreateTime = block.timestamp;
         whitelistMintParam.whitelistMintPrice = 50000000000000000; // 白名單售價0.05E
-        maxSupply = 1000; //最大供應量
+        maxSupply = 1000; //最大供給量
         isOpen = [false, false, false]; //分三批開盲
         openNum = [500, 300,200];
     }
@@ -60,6 +83,11 @@ contract TrendMasterNFT is ERC721A, Ownable{
     function verifyWhitelist(bytes32[] calldata _proof) public view returns(bool){
         bool isWhitelist = MerkleProof.verifyCalldata(_proof, whitelistMintParam.whitelistMerkleTreeRoot, keccak256(abi.encodePacked(msg.sender)));
         return isWhitelist;
+    }
+
+    //設定白名單mint上限數量
+    function setWhielistlimit(uint8 _amount) external onlyOwner{
+        whitelistMintParam.whitelistMintLimit = _amount;
     }
     
     //設定荷蘭拍參數
@@ -108,6 +136,16 @@ contract TrendMasterNFT is ERC721A, Ownable{
         openBlindPhase++;
     }
 
+
+    //多付退款
+    function remainRefund(uint256 _need, uint256 _pay) private {
+
+        if (_need < _pay){
+            (bool success, ) = msg.sender.call{value: (_pay - _need)}("");
+            require(success, "Transaction Failed!");
+        }
+    }
+
     //設定NFT Base URI
     //TODO:baseURI網址尚未提供
     function _baseURI() internal pure override returns (string memory) {
@@ -132,7 +170,46 @@ contract TrendMasterNFT is ERC721A, Ownable{
         }
     }
 
-    //TODO: 白名單Mint function尚未實作
-    //TODO: 荷蘭拍Mint function尚未實作
-    //TODO: 質押 function 尚未實作
+    //白名單Mint
+    function whitelistMint(bytes32[] calldata _proof, uint256 _quantity) external payable nonReentrant checkOverMaxSupply(_quantity){
+        require(verifyWhitelist(_proof), "You're not in whitelist.");
+        require(_quantity <= whitelistMintParam.whitelistMintLimit, "Over whitelist mint limit.");
+        require(_quantity * whitelistMintParam.whitelistMintPrice < msg.value, "ETH not enough.");
+
+        _mint(msg.sender, _quantity);
+
+        //若多支付，則退還給用戶
+        remainRefund((_quantity * whitelistMintParam.whitelistMintPrice), msg.value);
+
+    }
+
+    //公售荷蘭拍
+    function publicAuctionMint(uint256 _quantity)  external payable nonReentrant checkOverMaxSupply(_quantity) {
+        require(msg.value > _quantity * getAuctionPrice(), "ETH not enough.");
+
+        _mint(msg.sender, _quantity);
+
+        //若多支付，則退還給用戶
+        remainRefund(( _quantity * getAuctionPrice()), msg.value);
+    }
+    
+    //質押
+    function stake(uint256 _tokenId) external {
+        require(stakeMapping[_tokenId].stakeState != StakeState.STAKED, "Already Staked!");
+        stakeMapping[_tokenId].stakeState = StakeState.STAKED;
+    }
+
+    //解除質押
+    function unstake(uint256 _tokenId) external{
+        require(stakeMapping[_tokenId].stakeState != StakeState.UNSTAKED, "Already Unstaked!");
+        stakeMapping[_tokenId].stakeState = StakeState.UNSTAKED;
+    } 
+
+    //發TrendToken利息
+    //TODO: 前端定期呼叫
+    //DEBUG: 呼叫TrendToken合約發幣，需要Gas Fee，如何確保永遠夠?
+    function sendInterest(uint256 _tokenId) external{
+
+    }
+
 }
