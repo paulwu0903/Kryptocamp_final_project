@@ -125,7 +125,7 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
 
     //執行代幣分配
     function tokenDistribute() external onlyOwner {
-        
+
         // 空投、TrendToken質押利息、公售合約即為本合約，故不需要執行代幣轉移
 
         //國庫代幣分配
@@ -143,8 +143,7 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
         //TrendMaster質押代幣分配
         (bool nftStakeInterest_success, ) = address(distribution.nftStakeInterest.target).call{value: distribution.nftStakeInterest.max_amount}("");
         require(nftStakeInterest_success, "Distrubuting tokens to the nft-stake contract address failed!");
-
-        
+  
     }
 
 
