@@ -49,6 +49,16 @@ contract Council{
         uint256 votePowerThreshold;
     }
 
+    //vote power 門檻
+    struct VotePowerTokenThreshold{
+        uint256 level1;
+        uint256 level2;
+        uint256 level3;
+        uint256 level4;
+        uint256 level5;
+    }
+
+
     //理事會成員結構
     struct Member{
         address memberAddress;
@@ -80,8 +90,10 @@ contract Council{
     //Treasury interface
     ITreasury treasury;
 
+
     Campaign public campaign;
     RecallActivity public recallActivity;
+    VotePowerTokenThreshold public votePowerTokenThreshold;
 
     Rule public rule;
 
@@ -135,13 +147,28 @@ contract Council{
     }
 
     constructor (address _trendTokenAddress, address _treasuryAddress){
+        //載入國庫合約
         trendToken = ITrendToken(_trendTokenAddress);
         treasury = ITreasury(_treasuryAddress);
+
+        //初始化競選參數
         initCampaign();
+
+        //初始化罷免參數
+        initRecallActivity();
+
+        //初始化理事會規範
         rule.memberNumLimit = 10;
         rule.tokenNumThreshold= 1000000 ether;
         rule.passVoteNumThreshold= 200;
         rule.votePowerThreshold= 800;
+
+        //初始化取得vote power的token門檻
+        votePowerTokenThreshold.level1 = 100 ether;
+        votePowerTokenThreshold.level2 = 3000 ether;
+        votePowerTokenThreshold.level3 = 10000 ether;
+        votePowerTokenThreshold.level4 = 100000 ether;
+        votePowerTokenThreshold.level5 = 1000000 ether;
     }
 
     //初始競選活動參數
@@ -187,6 +214,21 @@ contract Council{
     //設定選民數量門檻
     function setVoterNumThreshold(uint256 _voterNumThreshold) external {
         rule.votePowerThreshold = _voterNumThreshold;
+    }
+
+    //設定取得vote power token門檻
+    function setVotePowerTokenThreshold(
+        uint256 _level1,
+        uint256 _level2,
+        uint256 _level3,
+        uint256 _level4,
+        uint256 _level5 
+    ) external {
+        votePowerTokenThreshold.level1 = _level1;
+        votePowerTokenThreshold.level2 = _level2;
+        votePowerTokenThreshold.level3 = _level3;
+        votePowerTokenThreshold.level4 = _level4;
+        votePowerTokenThreshold.level5 = _level5;
     }
 
     //建立罷免活動
@@ -298,15 +340,15 @@ contract Council{
             uint256 balance = trendToken.balanceOf(msg.sender);
             uint256 votePower = 0;
 
-            if (balance < 100 ether){
+            if (balance < votePowerTokenThreshold.level1){
                 votePower = 0;
-            }else if (balance >= 100 ether && balance < 3000 ether){
+            }else if (balance >= votePowerTokenThreshold.level1 && balance < votePowerTokenThreshold.level2){
                 votePower = 1;
-            }else if(balance >= 3000 ether && balance < 10000 ether ){
+            }else if(balance >= votePowerTokenThreshold.level2 && balance < votePowerTokenThreshold.level3 ){
                 votePower = 4;
-            }else if (balance >= 10000 ether && balance < 100000 ether){
+            }else if (balance >= votePowerTokenThreshold.level3 && balance < votePowerTokenThreshold.level4){
                 votePower = 9;
-            }else if (balance >= 100000 ether && balance < 1000000 ether){
+            }else if (balance >= votePowerTokenThreshold.level4 && balance < votePowerTokenThreshold.level5){
                 votePower = 16;
             }else{
                 votePower = 25;
