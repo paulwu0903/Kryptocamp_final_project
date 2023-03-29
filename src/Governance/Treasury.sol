@@ -48,29 +48,6 @@ contract Treasury{
         _;
     }
 
-    //新增owner
-    function addOwner(address _newMember) external {
-        require(_newMember != address(0), "invalid owner.");
-        require(!isOwner[_newMember], "owner not unique.");
-        owners.push(_newMember);
-        isOwner[_newMember] = true;
-    }
-
-    //移除owner
-    function removeOwner(address _removeMember) external{
-        require(isOwner[_removeMember], "not a member.");
-        
-        for(uint256 i=0; i< owners.length; i++){
-            if (owners[i] == _removeMember ){
-                delete owners[i];
-                for(uint256 j=i; j < owners.length-1; j++ ){
-                    owners[j] = owners[j+1];
-                }
-                owners.pop();
-                break;
-            }
-        }
-    }
 
     constructor (address[] memory _owners){
         require(_owners.length > 0, "owners required");
@@ -89,6 +66,33 @@ contract Treasury{
             owners.push(owner);
         }
 
+    }
+
+
+    //新增owner
+    function addOwner(address _newMember) external {
+        require(_newMember != address(0), "invalid owner.");
+        require(!isOwner[_newMember], "owner not unique.");
+        owners.push(_newMember);
+        isOwner[_newMember] = true;
+        txRequireConfirmedNum = (owners.length /2) +1;
+    }
+
+    //移除owner
+    function removeOwner(address _removeMember) external{
+        require(isOwner[_removeMember], "not a member.");
+        
+        for(uint256 i=0; i< owners.length; i++){
+            if (owners[i] == _removeMember ){
+                delete owners[i];
+                for(uint256 j=i; j < owners.length-1; j++ ){
+                    owners[j] = owners[j+1];
+                }
+                owners.pop();
+                break;
+            }
+        }
+        txRequireConfirmedNum = (owners.length /2) +1;
     }
 
     receive() external payable{ }
@@ -160,6 +164,7 @@ contract Treasury{
     function getOwner() external view returns(address[] memory){
         return owners;
     }
+
 
     //取得交易數量
     function getTransactionCount() external view returns(uint256){

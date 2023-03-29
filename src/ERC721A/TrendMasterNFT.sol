@@ -1,4 +1,4 @@
-//SPDX-license-Identifier
+//SPDX-License-Identifier: MIT
 pragma solidity >=0.8.17;
 
 import "../../lib/erc721a/contracts/ERC721A.sol";
