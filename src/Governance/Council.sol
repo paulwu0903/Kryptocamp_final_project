@@ -6,7 +6,7 @@ import "./ITreasury.sol";
 
 contract Council{
 
-    //TODO：新增刪除理事會
+    //TODO: 清理votePowerMap
 
     //競選活動狀態
     enum CampaignPhase{
@@ -16,12 +16,25 @@ contract Council{
         CONFIRMING
     }
 
+     //罷免活動狀態
+    enum RecallPhase{
+        CLOSED,
+        VOTING,
+        CONFIRMING
+    }
+
     //競選活動資訊
     struct Campaign{
-        CampaignPhase campaignPhase;
-        uint256 electedNum;
-        uint256 candidateNum;
-        uint256 votePowers;
+        CampaignPhase campaignPhase; //競選階段
+        uint256 electedNum; //本次競選限制多少人黨選
+        uint256 candidateNum; //本次競選限制多少候選人
+        uint256 votePowers; //本次競選共有多少投票力
+    }
+
+    struct RecallActivity{
+        RecallPhase recallPhase; //罷免階段
+        address recallAddress; //罷免對象
+        uint256 votePowers; //本次罷免共有多少投票力
     }
 
     //規範
@@ -68,33 +81,56 @@ contract Council{
     ITreasury treasury;
 
     Campaign public campaign;
+    RecallActivity public recallActivity;
 
     Rule public rule;
 
     //address => vote power
-    mapping (address=> uint256) votePowerMap;
+    mapping (address=> uint256) public votePowerMap;
+
+    // address => 是否投票
+    mapping (address => bool) public isVote;
+    //voter地址
+    address[] public voters;
 
 
     //判斷競選活動是否為CLOSED狀態
-    modifier isClosed{
+    modifier isCampaignClosed{
         require(campaign.campaignPhase == CampaignPhase.CLOSED, "not at CLOSED phase.");
         _;
     }
 
     //判斷競選活動是否為CANDIDATE_ATTENDING狀態
-    modifier isCandidateAttending{
+    modifier isCampaignCandidateAttending{
         require(campaign.campaignPhase == CampaignPhase.CANDIDATE_ATTENDING, "not at CANDIDATE_ATTENDING phase.");
         _;
     }
 
     //判斷競選活動是否為VOTING狀態
-    modifier isVoting{
+    modifier isCampaignVoting{
         require(campaign.campaignPhase == CampaignPhase.VOTING, "not at VOTING phase.");
         _;
     }
     //判斷競選活動是否為CONFIRMING狀態
-    modifier isConfirming{
+    modifier isCampaignConfirming{
         require(campaign.campaignPhase == CampaignPhase.CONFIRMING, "not at CONFIRMING phase.");
+        _;
+    }
+
+    //判斷罷免活動是否為CLOSED狀態
+    modifier isRecallClosed{
+        require(recallActivity.recallPhase == RecallPhase.CLOSED, "not at CLOSED phase.");
+        _;
+    }
+
+    //判斷罷免活動是否為VOTING狀態
+    modifier isRecallVoting{
+        require(recallActivity.recallPhase == RecallPhase.VOTING, "not at VOTING phase.");
+        _;
+    }
+    //判斷罷免活動是否為CONFIRMING狀態
+    modifier isRecallConfirming{
+        require(recallActivity.recallPhase == RecallPhase.CONFIRMING, "not at CONFIRMING phase.");
         _;
     }
 
@@ -114,6 +150,25 @@ contract Council{
         campaign.electedNum = 0;
         campaign.candidateNum = 10;
         campaign.votePowers = 0;
+
+        //清除candidates
+        for (uint256 i=candidates.length-1; i >=0 ; i--){
+            delete candidates[i];
+            candidates.pop();
+        }
+
+        //清除confirms
+        for (uint256 i=confirms.length-1; i >=0 ; i--){
+            delete confirms[i];
+            confirms.pop();
+        }
+    }
+
+    //初始罷免活斷參數
+    function initRecallActivity() private {
+        recallActivity.recallAddress = address(0);
+        recallActivity.recallPhase = RecallPhase.CLOSED;
+        recallActivity.votePowers = 0;
     }
 
     //設定理事會成員數量上限
@@ -134,17 +189,58 @@ contract Council{
         rule.votePowerThreshold = _voterNumThreshold;
     }
 
+    //建立罷免活動
+    function createRecall(address _recallCandidate) external isRecallClosed{
+        require(campaign.campaignPhase == CampaignPhase.CLOSED, "Campaign is active.");
+        require(recallActivity.recallAddress != address(0), "address can not be zero-address.");
+        recallActivity.recallPhase = RecallPhase.VOTING;
+        recallActivity.recallAddress = _recallCandidate;
+        recallActivity.votePowers = 0;
+    }
+
     //建立競選活動，由提案合約觸發
-    function createCampaign(uint256 _electedNum, uint256 _candidateNum) external isClosed{
+    function createCampaign(uint256 _electedNum, uint256 _candidateNum) external isCampaignClosed{
         require((_electedNum + members.length) < rule.memberNumLimit, "it will over members limit.");
+        require(recallActivity.recallPhase == RecallPhase.CLOSED, "Recall is active.");
         campaign.campaignPhase = CampaignPhase.CANDIDATE_ATTENDING;
         campaign.candidateNum = _candidateNum;
         campaign.electedNum= _electedNum;
         campaign.votePowers = 0;
-
     }
-    //參加競選，
-    function participate(string memory _name, string memory _politicalBriefing) external isCandidateAttending{
+
+    //更改競選階段為VOTING
+    function changeCampaignToVoting() external isCampaignCandidateAttending{
+        campaign.campaignPhase = CampaignPhase.VOTING;
+    }
+
+    //更改競選階段為CONFIRMING
+    function changeCampaignToConforming() external isCampaignVoting{
+        campaign.campaignPhase = CampaignPhase.CONFIRMING;
+
+        //清掉投票暫存
+        for (uint256 i=voters.length-1; i >= 0; i--){
+            delete isVote[voters[i]];
+            delete votePowerMap[voters[i]];
+            delete voters[i];
+            voters.pop();
+        }
+    }
+
+    //更改罷免階段為CONFIRMING
+    function changeRecallToConforming() external isRecallVoting{
+        recallActivity.recallPhase = RecallPhase.CONFIRMING;
+
+        //清掉投票暫存
+        for (uint256 i=voters.length-1; i >= 0; i--){
+            delete isVote[voters[i]];
+            delete votePowerMap[voters[i]];
+            delete voters[i];
+            voters.pop();
+        }
+    }
+
+    //參加競選
+    function participate(string memory _name, string memory _politicalBriefing) external isCampaignCandidateAttending{
         //檢查參選者幣量是否大於規定數量
         require(trendToken.balanceOf(msg.sender) >= rule.tokenNumThreshold, "TrendToken not enough!");
         //是否超出候選人上限
@@ -161,9 +257,9 @@ contract Council{
         );
     }
 
-    //投票
-    function vote(uint8 _candidateindex, uint256 _votePower) external{
-        uint256 remainVotePower = receiveRemainVotePower();
+    //競選投票
+    function campaignVote(uint8 _candidateindex, uint256 _votePower) external isCampaignVoting{
+        uint256 remainVotePower = getRemainVotePower();
         require(remainVotePower != 0 , "vote power is 0.");
         require(_votePower <= remainVotePower, "vote power not enough.");
         Candidate storage candidate = candidates[_candidateindex];
@@ -171,10 +267,32 @@ contract Council{
         campaign.votePowers += _votePower;
         candidate.receivedVotePowers += _votePower;
         votePowerMap[msg.sender] -= _votePower;
+
+        if (!isVote[msg.sender]){
+            isVote[msg.sender] = true;
+            voters.push(msg.sender);
+        }
+    }
+
+
+    //罷免投票
+    function recallVote(uint256 _votePower) external isRecallVoting{
+        uint256 remainVotePower = getRemainVotePower();
+        require(remainVotePower != 0 , "vote power is 0.");
+        require(_votePower <= remainVotePower, "vote power not enough.");
+
+        recallActivity.votePowers += _votePower;
+        votePowerMap[msg.sender] -= _votePower;
+
+        if (!isVote[msg.sender]){
+            isVote[msg.sender] = true;
+            voters.push(msg.sender);
+        }
+
     }
 
     //取得剩餘多少票
-    function receiveRemainVotePower() public returns(uint256){
+    function getRemainVotePower() public returns(uint256){
 
         if (votePowerMap[msg.sender] == 0){
             uint256 balance = trendToken.balanceOf(msg.sender);
@@ -203,15 +321,43 @@ contract Council{
         }   
     }
 
-    //結算
-    function comfirm() external isConfirming{
+    //罷免結算
+    function recallConfirm() external isRecallConfirming{
+        //總投票力未達標，罷免無效
+        if (recallActivity.votePowers < rule.votePowerThreshold){
+            initRecallActivity();
+        }else{
+            //從理事會中剔除，並移除國庫owner名單
+            treasury.removeOwner(recallActivity.recallAddress);
 
+            for (uint256 i =0; i < members.length; i++){
+                if (members[i].memberAddress == recallActivity.recallAddress){
+                    for (uint256 j = i; j < members.length - 1; i++){
+                        members[i] = members[i + 1];
+                    }
+                    delete members[i];
+                    members.pop();
+
+                    break;
+                }
+            }
+            initRecallActivity();
+        }
+
+
+
+    }
+
+
+    //競選結算
+    function campaignComfirm() external isCampaignConfirming{
+        //總投票力未達標，競選無效
         if (campaign.votePowers < rule.votePowerThreshold){
             initCampaign();
         }
 
         // copy candidates to confirms 
-       copyCandidatesToConfirms(candidates);
+        copyCandidatesToConfirms(candidates);
         //按照得票由大到小排序candidates
         sortConfirms();
 
@@ -222,7 +368,7 @@ contract Council{
         }
         
         //留下票數門檻達標的候選人
-        for(uint256 i=confirms.length-1; i <=0 ; i--){
+        for(uint256 i=confirms.length-1; i >=0 ; i--){
             if (confirms[i].receivedVotePowers < rule.passVoteNumThreshold){
                 delete confirms[i];
                 confirms.pop();
