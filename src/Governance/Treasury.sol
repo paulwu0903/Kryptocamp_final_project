@@ -95,6 +95,11 @@ contract Treasury{
         txRequireConfirmedNum = (owners.length /2) +1;
     }
 
+    //設定簽章數量門檻
+    function setTxRequireConfirmedNum(uint256 _threshold) external {
+        txRequireConfirmedNum = _threshold;
+    }
+
     receive() external payable{ }
 
     //發送交易
