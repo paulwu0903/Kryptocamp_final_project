@@ -145,8 +145,4 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
         require(nftStakeInterest_success, "Distrubuting tokens to the nft-stake contract address failed!");
   
     }
-
-
-
-   
 }
