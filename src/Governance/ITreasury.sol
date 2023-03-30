@@ -1,11 +1,11 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-interface ITrendToken{
+interface ITreasury{
 
-    function balanceOf(address account) external view returns (uint256);
-    function mint(uint256 _amount) external payable;
-    function transfer(address to, uint256 amount) external returns (bool);
+    function addOwner(address _newMember) external;
+    function removeOwner(address _removeMember) external;
+    function setTxRequireConfirmedNum(uint256 _threshold) external;
 
     
 }
