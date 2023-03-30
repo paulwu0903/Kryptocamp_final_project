@@ -203,7 +203,7 @@ contract Council{
         rule.memberNumLimit = _memberNumLimit;
     }
     //設定參與理事會競選持幣門檻
-    function setTokenNumLimit(uint256 _tokenNumThreshold) external{
+    function setTokenNumThreshold(uint256 _tokenNumThreshold) external{
         rule.tokenNumThreshold = _tokenNumThreshold;
     }
     //設定通過票數上限
