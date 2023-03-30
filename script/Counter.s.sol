@@ -8,7 +8,7 @@ contract CounterScript is Script {
         vm.createSelectFork("https://mainnet.infura.io/v3/172630547a8948448da3e3df4a5ef574");
     }
 
-    function run() public {
+    function run() public view{
         console.log(address(0x1).balance);
     }
 }

@@ -6,8 +6,6 @@ import "./ITreasury.sol";
 
 contract Council{
 
-    //TODO: 清理votePowerMap
-
     //競選活動狀態
     enum CampaignPhase{
         CLOSED,
@@ -29,12 +27,14 @@ contract Council{
         uint256 electedNum; //本次競選限制多少人黨選
         uint256 candidateNum; //本次競選限制多少候選人
         uint256 votePowers; //本次競選共有多少投票力
+        uint256 startTime; //競選開始時間
     }
 
     struct RecallActivity{
         RecallPhase recallPhase; //罷免階段
         address recallAddress; //罷免對象
         uint256 votePowers; //本次罷免共有多少投票力
+        uint256 startTime; //罷免開始時間
     }
 
     //規範
@@ -47,6 +47,16 @@ contract Council{
         uint256 passVoteNumThreshold;
         //當選門檻，參與投票力門檻
         uint256 votePowerThreshold;
+        //競選開始到開放參選時間差距
+        uint256 CampaignDurationFromCloseToAttend;
+        //開放參選到投票時間差距
+        uint256 CampaignDurationFromAttendToVote;
+        //投票到結算時間差距
+        uint256 CampaignDurationFromVoteToConfirm;
+        //罷免開始到投票時間差距
+        uint256 RecallDurationFromCloseToVote;
+        //罷免投票到確認時間差距
+        uint256 RecallDurationFromVoteToConfirm;
     }
 
     //vote power 門檻
@@ -171,12 +181,15 @@ contract Council{
         votePowerTokenThreshold.level5 = 1000000 ether;
     }
 
+    //設定競選時間差
+
     //初始競選活動參數
     function initCampaign() private{
         campaign.campaignPhase = CampaignPhase.CLOSED;
         campaign.electedNum = 0;
         campaign.candidateNum = 10;
         campaign.votePowers = 0;
+        campaign.startTime = type(uint256).max;
 
         //清除candidates
         for (uint256 i=candidates.length-1; i >=0 ; i--){
@@ -196,23 +209,45 @@ contract Council{
         recallActivity.recallAddress = address(0);
         recallActivity.recallPhase = RecallPhase.CLOSED;
         recallActivity.votePowers = 0;
+        recallActivity.startTime = type(uint256).max;
+    }
+
+    //設定競選相關時間
+    function CampaignDuration(
+        uint256 _closeToAttend,
+        uint256 _attendToVote,
+        uint256 _voteToConfirm
+    ) internal {
+        rule.CampaignDurationFromCloseToAttend = _closeToAttend;
+        rule.CampaignDurationFromAttendToVote = _attendToVote;
+        rule.CampaignDurationFromVoteToConfirm = _voteToConfirm;
+        
+    }
+
+    //設定罷免相關時間
+    function RecallDuration(
+        uint256 _closeToVote,
+        uint256 _voteToConfirm
+    ) internal {
+        rule.RecallDurationFromCloseToVote = _closeToVote;
+        rule.RecallDurationFromVoteToConfirm = _voteToConfirm;
     }
 
     //設定理事會成員數量上限
-    function setMemberNumLimit(uint256 _memberNumLimit) external{
+    function setMemberNumLimit(uint256 _memberNumLimit) internal{
         rule.memberNumLimit = _memberNumLimit;
     }
     //設定參與理事會競選持幣門檻
-    function setTokenNumThreshold(uint256 _tokenNumThreshold) external{
+    function setTokenNumThreshold(uint256 _tokenNumThreshold) internal{
         rule.tokenNumThreshold = _tokenNumThreshold;
     }
     //設定通過票數上限
-    function setPassLimit( uint256 _passThreshold) external {
+    function setPassLimit( uint256 _passThreshold) internal {
         rule.passVoteNumThreshold = _passThreshold;
     }
 
     //設定選民數量門檻
-    function setVoterNumThreshold(uint256 _voterNumThreshold) external {
+    function setVoterNumThreshold(uint256 _voterNumThreshold) internal {
         rule.votePowerThreshold = _voterNumThreshold;
     }
 
@@ -223,7 +258,7 @@ contract Council{
         uint256 _level3,
         uint256 _level4,
         uint256 _level5 
-    ) external {
+    ) internal {
         votePowerTokenThreshold.level1 = _level1;
         votePowerTokenThreshold.level2 = _level2;
         votePowerTokenThreshold.level3 = _level3;
@@ -232,7 +267,7 @@ contract Council{
     }
 
     //建立罷免活動
-    function createRecall(address _recallCandidate) external isRecallClosed{
+    function createRecall(address _recallCandidate) internal isRecallClosed{
         require(campaign.campaignPhase == CampaignPhase.CLOSED, "Campaign is active.");
         require(recallActivity.recallAddress != address(0), "address can not be zero-address.");
         recallActivity.recallPhase = RecallPhase.VOTING;
@@ -241,22 +276,31 @@ contract Council{
     }
 
     //建立競選活動，由提案合約觸發
-    function createCampaign(uint256 _electedNum, uint256 _candidateNum) external isCampaignClosed{
+    function createCampaign(uint256 _electedNum, uint256 _candidateNum, uint256 _startTime) internal isCampaignClosed{
         require((_electedNum + members.length) < rule.memberNumLimit, "it will over members limit.");
         require(recallActivity.recallPhase == RecallPhase.CLOSED, "Recall is active.");
+        require(_startTime >= block.timestamp, "start time is over.");
         campaign.campaignPhase = CampaignPhase.CANDIDATE_ATTENDING;
         campaign.candidateNum = _candidateNum;
         campaign.electedNum= _electedNum;
         campaign.votePowers = 0;
     }
 
+    //更改競選階段為CANDIDATE_ATTENDING
+    function changeCampaignToCandidateAttending() external isCampaignClosed{
+        require(campaign.startTime + rule.CampaignDurationFromCloseToAttend < block.timestamp, "not arrive candidate attending time.");
+        campaign.campaignPhase = CampaignPhase.CANDIDATE_ATTENDING;
+    }
+
     //更改競選階段為VOTING
     function changeCampaignToVoting() external isCampaignCandidateAttending{
+        require(campaign.startTime + rule.CampaignDurationFromCloseToAttend + rule.CampaignDurationFromAttendToVote< block.timestamp, "not arrive voting time.");
         campaign.campaignPhase = CampaignPhase.VOTING;
     }
 
     //更改競選階段為CONFIRMING
     function changeCampaignToConforming() external isCampaignVoting{
+        require(campaign.startTime + rule.CampaignDurationFromCloseToAttend + rule.CampaignDurationFromAttendToVote + rule.CampaignDurationFromVoteToConfirm< block.timestamp, "not arrive confirming time.");
         campaign.campaignPhase = CampaignPhase.CONFIRMING;
 
         //清掉投票暫存
@@ -268,8 +312,15 @@ contract Council{
         }
     }
 
+    //更改罷免階段為VOTING
+    function changeRecallToVoting() external isRecallClosed{
+        require(recallActivity.startTime + rule.RecallDurationFromCloseToVote< block.timestamp, "not arrive voting time.");
+        recallActivity.recallPhase = RecallPhase.VOTING;
+    }
+
     //更改罷免階段為CONFIRMING
     function changeRecallToConforming() external isRecallVoting{
+        require(recallActivity.startTime + rule.RecallDurationFromCloseToVote + rule.RecallDurationFromVoteToConfirm< block.timestamp, "not arrive confirming time.");        
         recallActivity.recallPhase = RecallPhase.CONFIRMING;
 
         //清掉投票暫存

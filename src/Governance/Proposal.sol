@@ -5,8 +5,9 @@ import "./ITreasury.sol";
 import "./ICouncil.sol";
 import "../ERC20/ITrendToken.sol";
 import "../ERC721A/ITrendMasterNFT.sol";
+import "./Council.sol";
 
-contract Proposal{
+contract Proposal is Council{
 
     //提案種類
     enum ProposalType{
@@ -19,6 +20,8 @@ contract Proposal{
         ADJUST_COUNCIL_MEMBER_LIMIT, //設定理事會最高人數限制
         ADJUST_VOTE_POWER_TOKEN_THRESHOLD, //設定TOKEN對應Vote Power各Level的值
         ADJUST_COUNCIL_CAMPAIGN_PASS_VOTE_POWER_THRESHOLD, //設定通過競選的基本票數
+        ADJUST_COUNCIL_CAMPAIGN_DURATION, //設定競選各階段間格時間
+        ADJUST_COUNCIL_RECALL_DURATION, //設定罷免各階段間隔時間
 
         //Proposal
         ADJUST_PROPOSAL_VOTE_POWER_THRESHOLD, //設定提案最低參與投票門檻
@@ -43,7 +46,7 @@ contract Proposal{
     }
  
     //提案規範
-    struct Rule{
+    struct ProposalRule{
         //提案持幣門檻
         uint256 tokenNumThreshold;
         //提案最低參與門檻
@@ -65,29 +68,24 @@ contract Proposal{
 
     Template[] public proposals;
 
-    Rule public rule;
+    ProposalRule public proposalRule;
 
-    ITreasury treasury;
-    ICouncil council;
-    ITrendToken trendToken;
     ITrendMasterNFT trendMasterNFT;
 
     constructor(
         address _trendToken,
         address _trendMasterNFT,
-        address _council,
         address _treasury
-    ){
+    ) Council(_trendToken, _treasury){
         //導入合約介面
         trendToken = ITrendToken(_trendToken);
         trendMasterNFT = ITrendMasterNFT(_trendMasterNFT);
-        council = ICouncil(_council);
         treasury = ITreasury(_treasury);
 
         //提案持幣門檻初始化
-        rule.tokenNumThreshold = 10000 ether;
+        proposalRule.tokenNumThreshold = 10000 ether;
         //通過提案門檻初始化
-        rule.votePowerThreshold = 800;
+        proposalRule.votePowerThreshold = 800;
 
     }
 
@@ -116,7 +114,7 @@ contract Proposal{
 
     //提案者資金達標
     modifier isTokenEnoughToPropose{
-        require(address(msg.sender).balance >= rule.tokenNumThreshold);
+        require(address(msg.sender).balance >= proposalRule.tokenNumThreshold);
         _;
     }
 
@@ -124,14 +122,34 @@ contract Proposal{
     function propose(
         ProposalType _proposalType,
         string memory _title,
-        string memory description,
+        string memory _description,
         uint256[] memory _paramsUint,
         address[] memory _paramsAddress)
     external 
+    isTokenEnoughToPropose
     {
-        
-    
+        proposals.push(Template(
+            {
+                proposalType: _proposalType,
+                proposalState: ProposalState.VOTING,
+                proposer: msg.sender,
+                title: _title,
+                desciption: _description,
+                paramsUint: _paramsUint,
+                paramsAddress: _paramsAddress,
+                votePowers: 0
+            }
+            )
+        );
     }
+
+    //投票
+    
+
+    
+     
+
+
 
     
 }
