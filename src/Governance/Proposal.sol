@@ -44,7 +44,9 @@ contract Proposal is Council{
         CLOSED,
         VOTING,
         CONFIRMING,
-        FINISHED
+        EXECUTED,
+        REJECTED
+
     }
  
     //提案規範
@@ -90,6 +92,11 @@ contract Proposal is Council{
     ProposalVotePowerTokenThreshold public proposalVotePowerThreshold;
 
     ITrendMasterNFT trendMasterNFT;
+
+    // index => address => bool
+    mapping (uint256 => mapping (address => bool)) isProposalVote;
+    
+
 
     
 
@@ -162,6 +169,7 @@ contract Proposal is Council{
     
     }
 
+
     //提案
     function propose(
         ProposalType _proposalType,
@@ -206,14 +214,25 @@ contract Proposal is Council{
 
     //提案投票
     function proposalVote(uint256 _proposalIndex) external isProposalVoting(_proposalIndex){
+        require(!isProposalVote[_proposalIndex][msg.sender], "already vote.");
         uint256 votePower = getProposalVotePower();
 
         Template storage proposal = proposals[_proposalIndex];
         proposal.votePowers += votePower;
+        isProposalVote[_proposalIndex][msg.sender] = true;
     }
 
     //提案結算並執行
     function proposalConfirm(uint256 _proposalIndex) external isProposalConfirming(_proposalIndex){
+        Template storage proposal = proposals[_proposalIndex];
+
+        if(proposal.votePowers < proposalRule.votePowerThreshold ){
+            proposal.proposalPhase = ProposalPhase.REJECTED;
+        }else{
+            proposal.proposalPhase = ProposalPhase.EXECUTED;
+            executeProposal(proposal);
+        }
+
         
     } 
 
@@ -225,8 +244,6 @@ contract Proposal is Council{
         proposalRule.proposalDurationFromCloseToVote = _proposalDurationFromCloseToVote;
         proposalRule.proposalDurationFromVoteToConfirm = _proposalDurationFromVoteToConfirm;
     }
-
-
 
     //取得Proposal投票力
     function getProposalVotePower()public view returns(uint256){
@@ -250,5 +267,45 @@ contract Proposal is Council{
 
         return votePower;
 
+    }
+
+    //執行提案
+    function executeProposal(Template storage _proposal) private view{
+
+        
+        //執行提案辨別及執行
+        if(_proposal.proposalType ==  ProposalType.ADD_COUNCIL){
+
+        }else if (_proposal.proposalType ==  ProposalType.REMOVE_COUNCIL){
+
+        }else if (_proposal.proposalType ==  ProposalType.ADJUST_COUNCIL_CANDIDATE_TOKEN_NUM_THRESHOLD){
+
+        }else if (_proposal.proposalType ==  ProposalType.ADJUST_COUNCIL_CAMPAIGN_VOTE_POWER_THRESHOLD){
+
+        }else if (_proposal.proposalType ==  ProposalType.ADJUST_COUNCIL_MEMBER_LIMIT){
+
+        }else if (_proposal.proposalType ==  ProposalType.ADJUST_COUNCIL_VOTE_POWER_TOKEN_THRESHOLD){
+
+        }else if (_proposal.proposalType ==  ProposalType.ADJUST_COUNCIL_CAMPAIGN_PASS_VOTE_POWER_THRESHOLD){
+
+        }else if (_proposal.proposalType ==  ProposalType.ADJUST_COUNCIL_CAMPAIGN_DURATION){
+
+        }else if (_proposal.proposalType ==  ProposalType.ADJUST_COUNCIL_RECALL_DURATION){
+
+        }else if (_proposal.proposalType ==  ProposalType.ADJUST_PROPOSAL_VOTE_POWER_THRESHOLD){
+
+        }else if (_proposal.proposalType ==  ProposalType.ADJUST_PROPOSAL_TOKEN_NUM_THRESHOLD){
+
+        }else if (_proposal.proposalType ==  ProposalType.ADJUST_PROPOSAL_DURATION){
+
+        }else if (_proposal.proposalType ==  ProposalType.ADJUST_PROPOSAL_VOTE_POWER_TOKEN_THRESHOLD){
+
+        }else if (_proposal.proposalType ==  ProposalType.ADJUST_TREASURY_CONFIRM_NUM_THRESHOLD){
+
+        }else if (_proposal.proposalType ==  ProposalType.ADJUST_TREND_MASTER_DAILY_INTEREST){
+
+        }else if (_proposal.proposalType ==  ProposalType.ADJUST_TREND_TOKEN_DAILY_INTEREST){
+
+        }
     }    
 }
