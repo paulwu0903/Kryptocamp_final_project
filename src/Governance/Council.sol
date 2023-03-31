@@ -48,15 +48,15 @@ contract Council{
         //當選門檻，參與投票力門檻
         uint256 votePowerThreshold;
         //競選開始到開放參選時間差距
-        uint256 CampaignDurationFromCloseToAttend;
+        uint256 campaignDurationFromCloseToAttend;
         //開放參選到投票時間差距
-        uint256 CampaignDurationFromAttendToVote;
+        uint256 campaignDurationFromAttendToVote;
         //投票到結算時間差距
-        uint256 CampaignDurationFromVoteToConfirm;
+        uint256 campaignDurationFromVoteToConfirm;
         //罷免開始到投票時間差距
-        uint256 RecallDurationFromCloseToVote;
+        uint256 recallDurationFromCloseToVote;
         //罷免投票到確認時間差距
-        uint256 RecallDurationFromVoteToConfirm;
+        uint256 recallDurationFromVoteToConfirm;
     }
 
     //vote power 門檻
@@ -172,6 +172,11 @@ contract Council{
         rule.tokenNumThreshold= 1000000 ether;
         rule.passVoteNumThreshold= 200;
         rule.votePowerThreshold= 800;
+        rule.campaignDurationFromCloseToAttend = 86400;
+        rule.campaignDurationFromAttendToVote = 86400 * 7;
+        rule.campaignDurationFromVoteToConfirm = 86400 * 7;
+        rule.recallDurationFromCloseToVote = 86400;
+        rule.recallDurationFromVoteToConfirm = 86400 * 7;
 
         //初始化取得vote power的token門檻
         votePowerTokenThreshold.level1 = 100 ether;
@@ -218,9 +223,9 @@ contract Council{
         uint256 _attendToVote,
         uint256 _voteToConfirm
     ) internal {
-        rule.CampaignDurationFromCloseToAttend = _closeToAttend;
-        rule.CampaignDurationFromAttendToVote = _attendToVote;
-        rule.CampaignDurationFromVoteToConfirm = _voteToConfirm;
+        rule.campaignDurationFromCloseToAttend = _closeToAttend;
+        rule.campaignDurationFromAttendToVote = _attendToVote;
+        rule.campaignDurationFromVoteToConfirm = _voteToConfirm;
         
     }
 
@@ -229,8 +234,8 @@ contract Council{
         uint256 _closeToVote,
         uint256 _voteToConfirm
     ) internal {
-        rule.RecallDurationFromCloseToVote = _closeToVote;
-        rule.RecallDurationFromVoteToConfirm = _voteToConfirm;
+        rule.recallDurationFromCloseToVote = _closeToVote;
+        rule.recallDurationFromVoteToConfirm = _voteToConfirm;
     }
 
     //設定理事會成員數量上限
@@ -288,19 +293,19 @@ contract Council{
 
     //更改競選階段為CANDIDATE_ATTENDING
     function changeCampaignToCandidateAttending() external isCampaignClosed{
-        require(campaign.startTime + rule.CampaignDurationFromCloseToAttend < block.timestamp, "not arrive candidate attending time.");
+        require(campaign.startTime + rule.campaignDurationFromCloseToAttend < block.timestamp, "not arrive candidate attending time.");
         campaign.campaignPhase = CampaignPhase.CANDIDATE_ATTENDING;
     }
 
     //更改競選階段為VOTING
     function changeCampaignToVoting() external isCampaignCandidateAttending{
-        require(campaign.startTime + rule.CampaignDurationFromCloseToAttend + rule.CampaignDurationFromAttendToVote< block.timestamp, "not arrive voting time.");
+        require(campaign.startTime + rule.campaignDurationFromCloseToAttend + rule.campaignDurationFromAttendToVote< block.timestamp, "not arrive voting time.");
         campaign.campaignPhase = CampaignPhase.VOTING;
     }
 
     //更改競選階段為CONFIRMING
     function changeCampaignToConforming() external isCampaignVoting{
-        require(campaign.startTime + rule.CampaignDurationFromCloseToAttend + rule.CampaignDurationFromAttendToVote + rule.CampaignDurationFromVoteToConfirm< block.timestamp, "not arrive confirming time.");
+        require(campaign.startTime + rule.campaignDurationFromCloseToAttend + rule.campaignDurationFromAttendToVote + rule.campaignDurationFromVoteToConfirm< block.timestamp, "not arrive confirming time.");
         campaign.campaignPhase = CampaignPhase.CONFIRMING;
 
         //清掉投票暫存
@@ -314,13 +319,13 @@ contract Council{
 
     //更改罷免階段為VOTING
     function changeRecallToVoting() external isRecallClosed{
-        require(recallActivity.startTime + rule.RecallDurationFromCloseToVote< block.timestamp, "not arrive voting time.");
+        require(recallActivity.startTime + rule.recallDurationFromCloseToVote< block.timestamp, "not arrive voting time.");
         recallActivity.recallPhase = RecallPhase.VOTING;
     }
 
     //更改罷免階段為CONFIRMING
     function changeRecallToConforming() external isRecallVoting{
-        require(recallActivity.startTime + rule.RecallDurationFromCloseToVote + rule.RecallDurationFromVoteToConfirm< block.timestamp, "not arrive confirming time.");        
+        require(recallActivity.startTime + rule.recallDurationFromCloseToVote + rule.recallDurationFromVoteToConfirm< block.timestamp, "not arrive confirming time.");        
         recallActivity.recallPhase = RecallPhase.CONFIRMING;
 
         //清掉投票暫存
