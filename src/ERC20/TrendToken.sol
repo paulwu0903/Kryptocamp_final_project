@@ -14,6 +14,9 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
     uint256 public maxSupply; //最大供給量
     uint256 public tokenPrice; //價格，單位: wei
 
+    //控制合約
+    address private controller;
+
     //代幣分配各標的結構定義
     struct DistributionItem{
         address target; //分配地址
@@ -34,10 +37,19 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
     
     Distribution public distribution; 
 
+    //利息
+    uint256 public interest;
+
 
     //檢查是否超出最大供給量
     modifier checkOverMaxSupply(uint256 _amount){
         require(totalSupply() + _amount <= maxSupply, "Over the max supply.");
+        _;
+    }
+
+    //是否為controller
+    modifier onlyController {
+        require(controller == msg.sender, "not controller.");
         _;
     }
 
@@ -89,6 +101,17 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
         decimals_ = _decimals;
         maxSupply = 1000000000;
         tokenPrice = 100000000000000;
+        interest = 170000000000000000000000;
+    }
+
+    //設定控制者
+    function setController(address _controllerAddress) external onlyOwner{
+        controller = _controllerAddress;
+    } 
+
+    //設定利息
+    function setInterest(uint256 _interest) external onlyController{
+        interest = _interest;
     }
 
     //設定價格
