@@ -13,6 +13,12 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
 
     using Strings for uint256;
 
+    //控制合約
+    address private controller;
+
+    //利息
+    uint256 public interest;
+
     //TODO: 白名單地址要設定哪些來測試
 
     enum StakeState{
@@ -65,6 +71,12 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
         _;
     }
 
+    //是否為controller
+    modifier onlyController {
+        require(controller == msg.sender, "not controller.");
+        _;
+    }
+
     constructor () ERC721A ("TrendMaster", "TM"){
         contractCreateTime = block.timestamp;
         whitelistMintParam.whitelistMintPrice = 50000000000000000; // 白名單售價0.05E
@@ -73,6 +85,16 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
         openNum = [500, 300,200];
     }
 
+
+    //設定控制者
+    function setController(address _controllerAddress) external onlyOwner{
+        controller = _controllerAddress;
+    } 
+
+    //設定利息
+    function setInterest(uint256 _interest) external onlyController{
+        interest = _interest;
+    }
     
     //設定白名單Merkle Tree樹根
     function setWhitelistMerkleTree(bytes32 _root) external onlyOwner{
