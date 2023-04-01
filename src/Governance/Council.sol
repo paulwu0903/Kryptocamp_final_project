@@ -3,8 +3,10 @@ pragma solidity >=0.8.17;
 
 import "../ERC20/ITrendToken.sol";
 import "./ITreasury.sol";
+import "../../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 
-contract Council{
+
+contract Council is Ownable{
 
     //競選活動狀態
     enum CampaignPhase{
@@ -100,6 +102,10 @@ contract Council{
     //Treasury interface
     ITreasury treasury;
 
+    //控制合約
+    address private controller;
+
+
 
     Campaign public campaign;
     RecallActivity public recallActivity;
@@ -156,6 +162,12 @@ contract Council{
         _;
     }
 
+    //是否為controller
+    modifier onlyController {
+        require(controller == msg.sender, "not controller.");
+        _;
+    }
+
     constructor (address _trendTokenAddress, address _treasuryAddress){
         //載入國庫合約
         trendToken = ITrendToken(_trendTokenAddress);
@@ -172,11 +184,11 @@ contract Council{
         rule.tokenNumThreshold= 1000000 ether;
         rule.passVoteNumThreshold= 200;
         rule.votePowerThreshold= 800;
-        rule.campaignDurationFromCloseToAttend = 86400;
-        rule.campaignDurationFromAttendToVote = 86400 * 7;
-        rule.campaignDurationFromVoteToConfirm = 86400 * 7;
-        rule.recallDurationFromCloseToVote = 86400;
-        rule.recallDurationFromVoteToConfirm = 86400 * 7;
+        rule.campaignDurationFromCloseToAttend = 86400 seconds;
+        rule.campaignDurationFromAttendToVote = 86400 * 7 seconds;
+        rule.campaignDurationFromVoteToConfirm = 86400 * 7 seconds;
+        rule.recallDurationFromCloseToVote = 86400 seconds;
+        rule.recallDurationFromVoteToConfirm = 86400 * 7 seconds;
 
         //初始化取得vote power的token門檻
         votePowerTokenThreshold.level1 = 100 ether;
@@ -185,6 +197,11 @@ contract Council{
         votePowerTokenThreshold.level4 = 100000 ether;
         votePowerTokenThreshold.level5 = 1000000 ether;
     }
+
+    //設定控制者
+    function setController(address _controllerAddress) external onlyOwner{
+        controller = _controllerAddress;
+    } 
 
     //設定競選時間差
 
@@ -221,8 +238,10 @@ contract Council{
     function CampaignDuration(
         uint256 _closeToAttend,
         uint256 _attendToVote,
-        uint256 _voteToConfirm
-    ) internal {
+        uint256 _voteToConfirm) 
+    external
+    onlyController 
+     {
         rule.campaignDurationFromCloseToAttend = _closeToAttend;
         rule.campaignDurationFromAttendToVote = _attendToVote;
         rule.campaignDurationFromVoteToConfirm = _voteToConfirm;
@@ -232,27 +251,29 @@ contract Council{
     //設定罷免相關時間
     function RecallDuration(
         uint256 _closeToVote,
-        uint256 _voteToConfirm
-    ) internal {
+        uint256 _voteToConfirm) 
+    external 
+    onlyController
+        {
         rule.recallDurationFromCloseToVote = _closeToVote;
         rule.recallDurationFromVoteToConfirm = _voteToConfirm;
     }
 
     //設定理事會成員數量上限
-    function setMemberNumLimit(uint256 _memberNumLimit) internal{
+    function setMemberNumLimit(uint256 _memberNumLimit) external onlyController{
         rule.memberNumLimit = _memberNumLimit;
     }
     //設定參與理事會競選持幣門檻
-    function setTokenNumThreshold(uint256 _tokenNumThreshold) internal{
+    function setTokenNumThreshold(uint256 _tokenNumThreshold) external onlyController{
         rule.tokenNumThreshold = _tokenNumThreshold;
     }
     //設定通過票數上限
-    function setPassLimit( uint256 _passThreshold) internal {
+    function setPassLimit( uint256 _passThreshold) external onlyController {
         rule.passVoteNumThreshold = _passThreshold;
     }
 
     //設定選民數量門檻
-    function setVoterNumThreshold(uint256 _voterNumThreshold) internal {
+    function setVoterNumThreshold(uint256 _voterNumThreshold) external onlyController {
         rule.votePowerThreshold = _voterNumThreshold;
     }
 
@@ -262,8 +283,10 @@ contract Council{
         uint256 _level2,
         uint256 _level3,
         uint256 _level4,
-        uint256 _level5 
-    ) internal {
+        uint256 _level5 ) 
+    external 
+    onlyController
+    {
         votePowerTokenThreshold.level1 = _level1;
         votePowerTokenThreshold.level2 = _level2;
         votePowerTokenThreshold.level3 = _level3;
@@ -272,7 +295,7 @@ contract Council{
     }
 
     //建立罷免活動
-    function createRecall(address _recallCandidate) internal isRecallClosed{
+    function createRecall(address _recallCandidate) external onlyController isRecallClosed{
         require(campaign.campaignPhase == CampaignPhase.CLOSED, "Campaign is active.");
         require(recallActivity.recallAddress != address(0), "address can not be zero-address.");
         recallActivity.recallPhase = RecallPhase.VOTING;
@@ -281,7 +304,7 @@ contract Council{
     }
 
     //建立競選活動，由提案合約觸發
-    function createCampaign(uint256 _electedNum, uint256 _candidateNum, uint256 _startTime) internal isCampaignClosed{
+    function createCampaign(uint256 _electedNum, uint256 _candidateNum, uint256 _startTime) external onlyController isCampaignClosed{
         require((_electedNum + members.length) < rule.memberNumLimit, "it will over members limit.");
         require(recallActivity.recallPhase == RecallPhase.CLOSED, "Recall is active.");
         require(_startTime >= block.timestamp, "start time is over.");

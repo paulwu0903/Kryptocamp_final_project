@@ -5,9 +5,8 @@ import "./ITreasury.sol";
 import "./ICouncil.sol";
 import "../ERC20/ITrendToken.sol";
 import "../ERC721A/ITrendMasterNFT.sol";
-import "./Council.sol";
 
-contract Proposal is Council{
+contract Proposal{
 
     //提案種類
     enum ProposalType{
@@ -46,7 +45,6 @@ contract Proposal is Council{
         CONFIRMING,
         EXECUTED,
         REJECTED
-
     }
  
     //提案規範
@@ -93,22 +91,26 @@ contract Proposal is Council{
 
     ITrendMasterNFT trendMasterNFT;
 
+    ITrendToken trendToken;
+
+    ITreasury treasury;
+
+    ICouncil council;
+
     // index => address => bool
     mapping (uint256 => mapping (address => bool)) isProposalVote;
-    
-
-
-    
 
     constructor(
         address _trendToken,
         address _trendMasterNFT,
-        address _treasury
-    ) Council(_trendToken, _treasury){
+        address _treasury,
+        address _council)
+        {
         //導入合約介面
         trendToken = ITrendToken(_trendToken);
         trendMasterNFT = ITrendMasterNFT(_trendMasterNFT);
         treasury = ITreasury(_treasury);
+        council = ICouncil(_council);
 
         //提案規範初始化
         proposalRule.tokenNumThreshold = 10000 ether;
@@ -123,7 +125,6 @@ contract Proposal is Council{
         proposalVotePowerThreshold.level3 = 10000 ether;
         proposalVotePowerThreshold.level4 = 100000 ether;
         proposalVotePowerThreshold.level5 = 1000000 ether;
-
 
     }
 
@@ -272,10 +273,10 @@ contract Proposal is Council{
     //執行提案
     function executeProposal(Template storage _proposal) private view{
 
-        
-        //執行提案辨別及執行
-        if(_proposal.proposalType ==  ProposalType.ADD_COUNCIL){
 
+        //提案辨別及執行
+        if(_proposal.proposalType ==  ProposalType.ADD_COUNCIL){
+            
         }else if (_proposal.proposalType ==  ProposalType.REMOVE_COUNCIL){
 
         }else if (_proposal.proposalType ==  ProposalType.ADJUST_COUNCIL_CANDIDATE_TOKEN_NUM_THRESHOLD){
