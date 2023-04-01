@@ -235,7 +235,7 @@ contract Council is Ownable{
     }
 
     //設定競選相關時間
-    function CampaignDuration(
+    function setCampaignDuration(
         uint256 _closeToAttend,
         uint256 _attendToVote,
         uint256 _voteToConfirm) 
@@ -249,7 +249,7 @@ contract Council is Ownable{
     }
 
     //設定罷免相關時間
-    function RecallDuration(
+    function setRecallDuration(
         uint256 _closeToVote,
         uint256 _voteToConfirm) 
     external 
@@ -268,7 +268,7 @@ contract Council is Ownable{
         rule.tokenNumThreshold = _tokenNumThreshold;
     }
     //設定通過票數上限
-    function setPassLimit( uint256 _passThreshold) external onlyController {
+    function setPassThreshold(uint256 _passThreshold) external onlyController {
         rule.passVoteNumThreshold = _passThreshold;
     }
 
@@ -315,19 +315,19 @@ contract Council is Ownable{
     }
 
     //更改競選階段為CANDIDATE_ATTENDING
-    function changeCampaignToCandidateAttending() external isCampaignClosed{
+    function changeCampaignToCandidateAttending() external onlyController isCampaignClosed{
         require(campaign.startTime + rule.campaignDurationFromCloseToAttend < block.timestamp, "not arrive candidate attending time.");
         campaign.campaignPhase = CampaignPhase.CANDIDATE_ATTENDING;
     }
 
     //更改競選階段為VOTING
-    function changeCampaignToVoting() external isCampaignCandidateAttending{
+    function changeCampaignToVoting() external onlyController isCampaignCandidateAttending{
         require(campaign.startTime + rule.campaignDurationFromCloseToAttend + rule.campaignDurationFromAttendToVote< block.timestamp, "not arrive voting time.");
         campaign.campaignPhase = CampaignPhase.VOTING;
     }
 
     //更改競選階段為CONFIRMING
-    function changeCampaignToConforming() external isCampaignVoting{
+    function changeCampaignToConforming() external onlyController isCampaignVoting{
         require(campaign.startTime + rule.campaignDurationFromCloseToAttend + rule.campaignDurationFromAttendToVote + rule.campaignDurationFromVoteToConfirm< block.timestamp, "not arrive confirming time.");
         campaign.campaignPhase = CampaignPhase.CONFIRMING;
 
@@ -341,13 +341,13 @@ contract Council is Ownable{
     }
 
     //更改罷免階段為VOTING
-    function changeRecallToVoting() external isRecallClosed{
+    function changeRecallToVoting() external onlyController isRecallClosed{
         require(recallActivity.startTime + rule.recallDurationFromCloseToVote< block.timestamp, "not arrive voting time.");
         recallActivity.recallPhase = RecallPhase.VOTING;
     }
 
     //更改罷免階段為CONFIRMING
-    function changeRecallToConforming() external isRecallVoting{
+    function changeRecallToConfirming() external onlyController isRecallVoting{
         require(recallActivity.startTime + rule.recallDurationFromCloseToVote + rule.recallDurationFromVoteToConfirm< block.timestamp, "not arrive confirming time.");        
         recallActivity.recallPhase = RecallPhase.CONFIRMING;
 
