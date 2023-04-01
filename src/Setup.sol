@@ -6,34 +6,80 @@ import "./ERC721A/TrendMasterNFT.sol";
 import "./Governance/Council.sol";
 import "./Governance/Proposal.sol";
 import "./Governance/Treasury.sol";
+
+import "./Governance/ICouncil.sol";
+import "./Governance/IProposal.sol";
+
 import "../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 
 contract Setup is Ownable{
 
+    ICouncil public council;
+    IProposal public proposal;
+
+    
+
     constructor(address[] memory _admins){
-        TrendToken trendToken = new TrendToken(18);
-        Treasury treasury = new Treasury(_admins);
-        TrendMasterNFT trendMasterNFT = new TrendMasterNFT();
-        Council council = new Council(address(trendToken), address(treasury));
-        Proposal proposal = new Proposal(address(trendToken), address(trendMasterNFT), address(treasury), address(council));
+        TrendToken trendTokenInstance = new TrendToken(18);
+        Treasury treasuryInstance = new Treasury(_admins);
+        TrendMasterNFT trendMasterNFTInstance = new TrendMasterNFT();
+        Council councilInstance = new Council(address(trendTokenInstance), address(treasuryInstance));
+        Proposal proposalInstance = new Proposal(address(trendTokenInstance), address(trendMasterNFTInstance), address(treasuryInstance), address(councilInstance));
 
-        council.setController(address(proposal));
-        
-        
+        councilInstance.setController(address(proposalInstance));
+        trendTokenInstance.setController(address(proposalInstance));
+        trendMasterNFTInstance.setController(address(proposalInstance));
+
+        trendTokenInstance.setDistribution(
+            {
+                _treasury_address: address(treasuryInstance),
+                _treasury_amount: 200000000000000000000000000, 
+                _tokenStakeInterest_amount: 250000000000000000000000000, 
+                _consultant_address: address(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed), 
+                _consultant_amount: 30000000000000000000000000, 
+                _airdrop_amount: 20000000000000000000000000, 
+                _nftStakeInterest_address: address(trendMasterNFTInstance), 
+                _nftStakeInterest_amount: 300000000000000000000000000, 
+                _publicMint_amount: 200000000000000000000000000
+            });
+
+        council = ICouncil(address(councilInstance));
+        proposal = IProposal(address(proposalInstance));
     }
 
-    // 更改提案階段
-    function changeProposalPhase() external onlyOwner{
-
+    // 更改提案為投票階段
+    function changeProposalPhaseToVoting(uint256 _proposalIndex) external onlyOwner{
+        proposal.changeProposalPhaseToVoting(_proposalIndex);
     }
 
-    //更改競選階段
-    function changeCamgaignPhase() external onlyOwner{
-
+    // 更改提案為確認階段
+    function changeProposalPhaseTocConfirming(uint256 _proposalIndex) external onlyOwner{
+        proposal.changeProposalPhaseToConfirming(_proposalIndex);
     }
-    //更改罷免階段
-    function changeRecallPhase() external onlyOwner{
 
+    //更改競選為候選人報名階段
+    function changeCamgaignPhaseToCandidateAttending() external onlyOwner{
+        council.changeCampaignToCandidateAttending();
+    }
+
+    //更改競選為投票階段
+    function changeCamgaignPhaseToVoting() external onlyOwner{
+        council.changeCampaignToVoting();
+    }
+
+    //更改競選為確認階段
+    function changeCamgaignPhaseToConfirming() external onlyOwner{
+        council.changeCampaignToConforming();
+    }
+
+    //更改罷免為投票階段
+    function changeRecallPhaseToVoting() external onlyOwner{
+        council.changeRecallToVoting();
+    }
+
+    //更改罷免為確認階段
+    function changeRecallPhaseToConfirming() external onlyOwner{
+        council.changeRecallToConfirming();
     }
     
     
