@@ -10,6 +10,8 @@ interface ITrendToken{
     function sendAirdrop() external;
     function setWhitelistMerkleTree(bytes32 _root) external;
     function setWhitelistNum(uint256 _whitelistNum) external;
+    function approve(address spender, uint256 amount) external returns (bool);
+    function transferFrom(address from, address to, uint256 amount) external returns (bool);
 
     //給前端定期呼叫（天）
     function updateTotalStakedTokenHistory() external;

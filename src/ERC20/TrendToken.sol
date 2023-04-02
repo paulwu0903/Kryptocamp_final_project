@@ -42,7 +42,7 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
     }
 
     //質押資訊
-    struct StakedInfo{
+    struct TokenStakedInfo{
         uint256 totalStaked; //總質押幣量
         uint256 stakedNum; //總質押筆數
         uint256 stakedInterest; //總質押利息
@@ -57,17 +57,13 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
 
     bytes32 public whitelistMerkleTreeRoot; //白名單Merkle Tree Root
 
-
-    //質押時間 => 總數
-    mapping (uint256 => uint256) private totalStakedHistory;
-
     //質押總數歷史
     TotalStakedTokenHistory public totalStakedTokenHistory;
     //代幣分配
     Distribution public distribution; 
 
     //address => tokenId => 質押資訊
-    mapping (address => StakedInfo) public stakeInfoMap;
+    mapping (address => TokenStakedInfo) public stakeInfoMap;
 
     
     //質押總數
@@ -207,10 +203,6 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
         (bool treasury_success, ) = address(distribution.treasury.target).call{value: distribution.treasury.max_amount}("");
         require(treasury_success, "Distrubuting tokens to the treasury contract address failed!");
 
-        
-        (bool tokenStakeInterest_success, ) = address(distribution.tokenStakeInterest.target).call{value: distribution.tokenStakeInterest.max_amount}("");
-        require(tokenStakeInterest_success, "Distrubuting tokens to the token-stake contract address failed!");
-
         //顧問代幣分配
         (bool consultant_success, ) = address(distribution.consultant.target).call{value: distribution.consultant.max_amount}("");
         require(consultant_success, "Distrubuting tokens to the consultant address failed!");
@@ -224,6 +216,7 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
     //質押
     function stakeToken(uint256 _stakeAmount) external {
         require(balanceOf(msg.sender) - stakeInfoMap[msg.sender].totalStaked > _stakeAmount, "token not enough");
+        require(block.timestamp < totalStakedTokenHistory.startTime + (86400 * 365 * 4), "stake-mechanism was closed.");
         stakeInfoMap[msg.sender].stakes.push(
             Stake(
                 {
@@ -256,7 +249,6 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
 
      //解除質押，取得質押利息
     function unstakeToken(uint256 _stakedIndex) external nonReentrant stakedToken{
-        require(block.timestamp < totalStakedTokenHistory.startTime + (86400 * 365 * 4), "stake-mechanism was closed.");
         uint256 currentInterest = calculateInterest(_stakedIndex);
 
         //質押資訊調整
@@ -282,12 +274,11 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
      //取得分多少利息
     function calculateInterest(uint256 _stakedIndex) public stakedToken view returns (uint256){
         
-        //uint256 dayNum = (block.timestamp - stakeInfoMap[msg.sender].stakes[_stakedIndex].startTime) / 86400 seconds;
         uint256 startIndex = ((stakeInfoMap[msg.sender].stakes[_stakedIndex].startTime - totalStakedTokenHistory.startTime) / 86400) + 1;
         uint256 totalReward = 0;
         
         for(uint256 i=startIndex ; i< totalStakedTokenHistory.dailyTotalStakedToken.length; i++){
-            totalReward += (dailyInterest * stakeInfoMap[msg.sender].stakes[_stakedIndex].amount) / totalStakedTokenHistory.dailyTotalStakedToken[i];
+            totalReward += ((dailyInterest * stakeInfoMap[msg.sender].stakes[_stakedIndex].amount) / totalStakedTokenHistory.dailyTotalStakedToken[i]);
         }
 
         return totalReward;
@@ -324,5 +315,6 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
         require(success, "Transaction failed.");
         
     }
+
 
 }  

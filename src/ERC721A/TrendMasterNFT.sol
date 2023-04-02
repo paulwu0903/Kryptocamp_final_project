@@ -7,7 +7,7 @@ import "../../lib/openzeppelin-contracts/contracts/utils/cryptography/MerkleProo
 import "../../lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 
 import "../../lib/openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
-import "../ERC20/TrendToken.sol";
+import "../ERC20/ITrendToken.sol";
 
 contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
 
@@ -15,9 +15,8 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
 
     //控制合約
     address private controller;
-
     //利息
-    uint256 public interest;
+    uint256 public dailyInterest;
 
     //TODO: 白名單地址要設定哪些來測試
 
@@ -25,14 +24,27 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
         STAKED, UNSTAKED
     }
 
-    struct StakeInfo{
-        StakeState stakeState; //質押狀態
-        uint256 startStakeTime; //開始質押時間
-        uint256 interest; //利息
+    //質押資訊
+    struct NFTStakedInfo{
+        StakeState stakeState;
+        uint256 startTime;
+        uint256 stakedInterest;
     }
 
-    mapping (uint256 => StakeInfo) stakeMapping; // 記錄是否stake
+    //歷史質押總數（每日新增）
+    struct TotalStakedNFTHistory{
+        uint256 startTime;
+        uint256[] dailyTotalStakedNFT;
+    }
 
+     //質押總數歷史
+    TotalStakedNFTHistory public totalStakedNFTHistory;
+
+    // address => tokenId => 質押資訊
+    mapping (address => mapping(uint256 => NFTStakedInfo)) public nftStakedInfoMap;
+
+    //質押總數
+    uint256 public totalStakedNFT;
 
     //荷蘭拍參數定義
     struct Auction{
@@ -65,6 +77,8 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
 
     uint256 contractCreateTime;
 
+    ITrendToken public trendToken;
+
     //檢查是否超出最大供給量
     modifier checkOverMaxSupply(uint256 _quentity){
         require(totalSupply() + _quentity <= maxSupply, "Over the max supply.");
@@ -77,14 +91,16 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
         _;
     }
 
-    constructor () ERC721A ("TrendMaster", "TM"){
+    constructor (address _trendTokenAddress) ERC721A ("TrendMaster", "TM"){
         contractCreateTime = block.timestamp;
         whitelistMintParam.whitelistMintPrice = 50000000000000000; // 白名單售價0.05E
         maxSupply = 1000; //最大供給量
         isOpen = [false, false, false]; //分三批開盲
         openNum = [500, 300,200];
 
-        interest = 200000000000000000000000;
+        dailyInterest = 200000000000000000000000;
+
+        trendToken = ITrendToken(_trendTokenAddress);
     }
 
 
@@ -95,7 +111,7 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
 
     //設定利息
     function setInterest(uint256 _interest) external onlyController{
-        interest = _interest;
+        dailyInterest = _interest;
     }
     
     //設定白名單Merkle Tree樹根
@@ -104,7 +120,7 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
     }
 
     //驗證當下呼叫合約地址是否為白名單
-    function verifyWhitelist(bytes32[] calldata _proof) public view returns(bool){
+    function verifyWhitelist(bytes32[] calldata _proof) private view returns(bool){
         bool isWhitelist = MerkleProof.verifyCalldata(_proof, whitelistMintParam.whitelistMerkleTreeRoot, keccak256(abi.encodePacked(msg.sender)));
         return isWhitelist;
     }
@@ -112,6 +128,10 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
     //設定白名單mint上限數量
     function setWhielistlimit(uint8 _amount) external onlyOwner{
         whitelistMintParam.whitelistMintLimit = _amount;
+    }
+    modifier ownNFT(uint256 _tokenId){
+        require(ownerOf(_tokenId) == msg.sender, "NFT is not yours.");
+        _;
     }
     
     //設定荷蘭拍參數
@@ -218,22 +238,58 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
     }
     
     //質押
-    function stake(uint256 _tokenId) external {
-        require(stakeMapping[_tokenId].stakeState != StakeState.STAKED, "Already Staked!");
-        stakeMapping[_tokenId].stakeState = StakeState.STAKED;
+    function stakeNFT(uint256 _tokenId) external ownNFT(_tokenId){
+        require(nftStakedInfoMap[msg.sender][_tokenId].stakeState == StakeState.UNSTAKED, "Already STAKED.");
+        
+        nftStakedInfoMap[msg.sender][_tokenId].stakeState = StakeState.STAKED;
+        nftStakedInfoMap[msg.sender][_tokenId].startTime = block.timestamp;
+
+        totalStakedNFT += 1;
+
     }
 
     //解除質押
-    function unstake(uint256 _tokenId) external{
-        require(stakeMapping[_tokenId].stakeState != StakeState.UNSTAKED, "Already Unstaked!");
-        stakeMapping[_tokenId].stakeState = StakeState.UNSTAKED;
+    function unstakeNFT(uint256 _tokenId) external ownNFT(_tokenId){
+        require( nftStakedInfoMap[msg.sender][_tokenId].stakeState == StakeState.STAKED, "Already UNSTAKED.");
+        nftStakedInfoMap[msg.sender][_tokenId].stakeState = StakeState.UNSTAKED;
+
+        uint256 currentInterest = calculateInterest(_tokenId);
+        nftStakedInfoMap[msg.sender][_tokenId].stakedInterest += currentInterest;
+
+        //用戶可以動用這筆利息的錢
+        trendToken.transferFrom(address(this), address(msg.sender), currentInterest);
     } 
 
-    //發TrendToken利息
-    //TODO: 前端定期呼叫
-    //DEBUG: 呼叫TrendToken合約發幣，需要Gas Fee，如何確保永遠夠?
-    function sendInterest(uint256 _tokenId) external{
-
+    //覆寫轉移方法
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId) 
+    public 
+    payable 
+    override 
+    {
+        require( nftStakedInfoMap[msg.sender][tokenId].stakeState == StakeState.UNSTAKED, "NFT is STAKED.");
+        safeTransferFrom(from, to, tokenId, '');
     }
+
+    //每日更新歷史總幣量（給前端定期呼叫）
+    function updateTotalStakedTokenHistory() external onlyOwner{
+        totalStakedNFTHistory.dailyTotalStakedNFT.push(totalStakedNFT);
+    }
+
+    //取得分多少利息
+    function calculateInterest(uint256 _tokenId) public  view returns (uint256){
+
+        uint256 startIndex = ((nftStakedInfoMap[msg.sender][_tokenId].startTime - totalStakedNFTHistory.startTime) / 86400) + 1;
+        uint256 totalReward = 0;
+        
+        for(uint256 i=startIndex ; i< totalStakedNFTHistory.dailyTotalStakedNFT.length; i++){
+            totalReward += (dailyInterest / totalStakedNFTHistory.dailyTotalStakedNFT[i]);
+        }
+
+        return totalReward;
+    }
+
 
 }

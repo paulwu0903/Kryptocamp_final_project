@@ -10,6 +10,7 @@ import "./Governance/Treasury.sol";
 import "./Governance/ICouncil.sol";
 import "./Governance/IProposal.sol";
 import "./ERC20/ITrendToken.sol";
+import "./ERC721A/ITrendMasterNFT.sol";
 
 import "../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 
@@ -18,19 +19,21 @@ contract Setup is Ownable{
     ICouncil public council;
     IProposal public proposal;
     ITrendToken public trendToken;
+    ITrendMasterNFT public trendMasterNFT;
 
     
 
     constructor(address[] memory _admins){
         TrendToken trendTokenInstance = new TrendToken(18);
         Treasury treasuryInstance = new Treasury(_admins);
-        TrendMasterNFT trendMasterNFTInstance = new TrendMasterNFT();
+        TrendMasterNFT trendMasterNFTInstance = new TrendMasterNFT(address(trendTokenInstance));
         Council councilInstance = new Council(address(trendTokenInstance), address(treasuryInstance));
         Proposal proposalInstance = new Proposal(address(trendTokenInstance), address(trendMasterNFTInstance), address(treasuryInstance), address(councilInstance));
 
         councilInstance.setController(address(proposalInstance));
         trendTokenInstance.setController(address(proposalInstance));
         trendMasterNFTInstance.setController(address(proposalInstance));
+        trendMasterNFT.setController(address(trendMasterNFTInstance));
 
         trendTokenInstance.setDistribution(
             {
@@ -100,5 +103,25 @@ contract Setup is Ownable{
     function updateTotalStakedTokenHistory() external onlyOwner{
         trendToken.updateTotalStakedTokenHistory();
     }
-
+    function setWhitelistMerkleTree(bytes32 _root) external onlyOwner{
+        trendMasterNFT.setWhitelistMerkleTree(_root);
+    }
+    function setWhielistlimit(uint8 _amount) external onlyOwner{
+        trendMasterNFT.setWhielistlimit(_amount);
+    }
+    function setAuction(
+        uint256 _startPrice,
+        uint256 _endPrice,
+        uint256 _priceStep,
+        uint256 _startTime,
+        uint256 _timeStep, 
+        uint256 _timeStepNum) 
+    external
+    onlyOwner
+    {
+        trendMasterNFT.setAuction(_startPrice, _endPrice, _priceStep, _startTime, _timeStep, _timeStepNum);
+    }
+    function openBlindbox() external onlyOwner{
+        trendMasterNFT.openBlindbox();
+    }
 }
