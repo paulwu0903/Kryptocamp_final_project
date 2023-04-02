@@ -9,6 +9,7 @@ import "./Governance/Treasury.sol";
 
 import "./Governance/ICouncil.sol";
 import "./Governance/IProposal.sol";
+import "./ERC20/ITrendToken.sol";
 
 import "../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 
@@ -16,6 +17,7 @@ contract Setup is Ownable{
 
     ICouncil public council;
     IProposal public proposal;
+    ITrendToken public trendToken;
 
     
 
@@ -45,6 +47,7 @@ contract Setup is Ownable{
 
         council = ICouncil(address(councilInstance));
         proposal = IProposal(address(proposalInstance));
+        trendToken = ITrendToken(address(treasuryInstance));
     }
 
     // 更改提案為投票階段
@@ -81,6 +84,21 @@ contract Setup is Ownable{
     function changeRecallPhaseToConfirming() external onlyOwner{
         council.changeRecallToConfirming();
     }
-    
-    
+
+    //發放空投
+    function sendAirdrop() external onlyOwner{
+        trendToken.sendAirdrop();
+    }
+
+    //設定token空投白名單數量
+    function setWhitelistNum(uint256 _whitelistNum) external onlyOwner{
+        trendToken.setWhitelistNum(_whitelistNum);
+    }
+
+
+    //給前端定期呼叫
+    function updateTotalStakedTokenHistory() external onlyOwner{
+        trendToken.updateTotalStakedTokenHistory();
+    }
+
 }

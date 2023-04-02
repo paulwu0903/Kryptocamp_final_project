@@ -83,6 +83,8 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
         maxSupply = 1000; //最大供給量
         isOpen = [false, false, false]; //分三批開盲
         openNum = [500, 300,200];
+
+        interest = 200000000000000000000000;
     }
 
 

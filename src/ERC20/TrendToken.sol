@@ -13,6 +13,7 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
     uint8 public decimals_; //精準度
     uint256 public maxSupply; //最大供給量
     uint256 public tokenPrice; //價格，單位: wei
+    uint256 public whitelistNum;
 
     //控制合約
     address private controller;
@@ -34,15 +35,50 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
         DistributionItem publicMint; //公售
     }
 
-    
+    //質押細項
+    struct Stake {
+        uint256 amount;  
+        uint256 startTime;
+    }
+
+    //質押資訊
+    struct StakedInfo{
+        uint256 totalStaked; //總質押幣量
+        uint256 stakedNum; //總質押筆數
+        uint256 stakedInterest; //總質押利息
+        Stake[] stakes;
+    }
+
+    //歷史質押總數（每日新增）
+    struct TotalStakedTokenHistory{
+        uint256 startTime;
+        uint256[] dailyTotalStakedToken;
+    }
+
+    bytes32 public whitelistMerkleTreeRoot; //白名單Merkle Tree Root
+
+
+    //質押時間 => 總數
+    mapping (uint256 => uint256) private totalStakedHistory;
+
+    //質押總數歷史
+    TotalStakedTokenHistory public totalStakedTokenHistory;
+    //代幣分配
     Distribution public distribution; 
 
-    //利息
-    uint256 public interest;
+    //address => tokenId => 質押資訊
+    mapping (address => StakedInfo) public stakeInfoMap;
 
+    
+    //質押總數
+    uint256 public totalStakedToken;
+    
+
+    //利息
+    uint256 public dailyInterest;
 
     //檢查是否超出最大供給量
-    modifier checkOverMaxSupply(uint256 _amount){
+    modifier notOverMaxSupply(uint256 _amount){
         require(totalSupply() + _amount <= maxSupply, "Over the max supply.");
         _;
     }
@@ -50,6 +86,11 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
     //是否為controller
     modifier onlyController {
         require(controller == msg.sender, "not controller.");
+        _;
+    }
+
+    modifier stakedToken{
+        require(stakeInfoMap[msg.sender].stakedNum > 0, "no staked token.");
         _;
     }
 
@@ -98,12 +139,20 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
     // 建構子初始化參數
     constructor (uint8 _decimals) 
                 ERC20("TrendToken", "TREND"){
+        whitelistNum = 0;
         decimals_ = _decimals;
         maxSupply = 1000000000;
         tokenPrice = 100000000000000;
-        interest = 170000000000000000000000;
+        dailyInterest = 170000000000000000000000;
+        totalStakedToken = 0;
+        totalStakedTokenHistory.startTime = block.timestamp;
     }
 
+    //設定白名單總數
+    function setWhitelistNum(uint256 _whitelistNum) external onlyOwner{ 
+        whitelistNum = _whitelistNum;
+    }
+    
     //設定控制者
     function setController(address _controllerAddress) external onlyOwner{
         controller = _controllerAddress;
@@ -111,7 +160,7 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
 
     //設定利息
     function setInterest(uint256 _interest) external onlyController{
-        interest = _interest;
+        dailyInterest = _interest;
     }
 
     //設定價格
@@ -139,8 +188,11 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
     }
 
     // mint功能，支付ETH購買
-    function mint(uint256 _amount) external checkOverMaxSupply(_amount) payable{
+    function mint(uint256 _amount) external nonReentrant notOverMaxSupply(_amount) payable{
         require(msg.value >= tokenPrice * _amount, "ETH not enough!!"); //判斷支付費用是否足夠
+        require(_amount <= distribution.publicMint.max_amount - distribution.publicMint.current_amount, "Tokens for public Mint are not enough."); //代幣數量是否足夠
+        
+        distribution.publicMint.current_amount += _amount;
         _mint(msg.sender, _amount); 
 
         remainRefund(( tokenPrice * _amount), msg.value);
@@ -168,4 +220,109 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
         require(nftStakeInterest_success, "Distrubuting tokens to the nft-stake contract address failed!");
   
     }
-}
+
+    //質押
+    function stakeToken(uint256 _stakeAmount) external {
+        require(balanceOf(msg.sender) - stakeInfoMap[msg.sender].totalStaked > _stakeAmount, "token not enough");
+        stakeInfoMap[msg.sender].stakes.push(
+            Stake(
+                {
+                    amount: _stakeAmount,
+                    startTime: block.timestamp
+                }
+            )
+        );
+        stakeInfoMap[msg.sender].totalStaked += _stakeAmount;
+        stakeInfoMap[msg.sender].stakedNum += 1 ;
+        stakeInfoMap[msg.sender].stakedInterest = 0;
+
+        totalStakedToken += _stakeAmount;
+
+
+    }
+
+    //非質押餘額查看
+    function unstakeBalanceOf() public view returns (uint256) {
+        return balanceOf(msg.sender) - stakeInfoMap[msg.sender].totalStaked;
+        
+    }
+
+    //override轉錢功能
+    function transfer(address to, uint256 amount) public override returns (bool) {
+        require(amount <= unstakeBalanceOf(), "unstaked tokens are not enough.");
+        (bool success, ) = address(to).call{value: amount}("");
+        return success;
+    }
+
+     //解除質押，取得質押利息
+    function unstakeToken(uint256 _stakedIndex) external nonReentrant stakedToken{
+        require(block.timestamp < totalStakedTokenHistory.startTime + (86400 * 365 * 4), "stake-mechanism was closed.");
+        uint256 currentInterest = calculateInterest(_stakedIndex);
+
+        //質押資訊調整
+        stakeInfoMap[msg.sender].totalStaked -= stakeInfoMap[msg.sender].stakes[_stakedIndex].amount;
+        
+
+        for(uint256 i=_stakedIndex ; i < stakeInfoMap[msg.sender].stakes.length-1; i++){
+            stakeInfoMap[msg.sender].stakes[i] = stakeInfoMap[msg.sender].stakes[i+1];
+        }
+        delete stakeInfoMap[msg.sender].stakes[stakeInfoMap[msg.sender].stakes.length -1];
+        stakeInfoMap[msg.sender].stakes.pop();
+
+        stakeInfoMap[msg.sender].stakedNum -= 1 ;
+        stakeInfoMap[msg.sender].stakedInterest += currentInterest;
+
+        distribution.tokenStakeInterest.current_amount += currentInterest;
+
+        (bool success, ) = address(msg.sender).call{value: currentInterest}("");
+        require(success, "Transaction Error!!");
+
+    }
+
+     //取得分多少利息
+    function calculateInterest(uint256 _stakedIndex) public stakedToken view returns (uint256){
+        
+        //uint256 dayNum = (block.timestamp - stakeInfoMap[msg.sender].stakes[_stakedIndex].startTime) / 86400 seconds;
+        uint256 startIndex = ((stakeInfoMap[msg.sender].stakes[_stakedIndex].startTime - totalStakedTokenHistory.startTime) / 86400) + 1;
+        uint256 totalReward = 0;
+        
+        for(uint256 i=startIndex ; i< totalStakedTokenHistory.dailyTotalStakedToken.length; i++){
+            totalReward += (dailyInterest * stakeInfoMap[msg.sender].stakes[_stakedIndex].amount) / totalStakedTokenHistory.dailyTotalStakedToken[i];
+        }
+
+        return totalReward;
+    }
+
+     //每日更新歷史總幣量（給前端定期呼叫）
+    function updateTotalStakedTokenHistory() external onlyOwner{
+        totalStakedTokenHistory.dailyTotalStakedToken.push(totalStakedToken);
+    }
+
+    //設定白名單Merkle Tree樹根
+    function setWhitelistMerkleTree(bytes32 _root) external onlyOwner{
+        whitelistMerkleTreeRoot = _root;
+    }
+
+    //驗證當下呼叫合約地址是否為白名單
+    function verifyWhitelist(bytes32[] calldata _proof) public view returns(bool){
+        bool isWhitelist = MerkleProof.verifyCalldata(_proof, whitelistMerkleTreeRoot, keccak256(abi.encodePacked(msg.sender)));
+        return isWhitelist;
+    }
+
+    //發放空投，用戶自取
+    function sendAirdrop(bytes32[] calldata _proof) external nonReentrant{
+
+        require(whitelistNum != 0, "airdrop is not ready!");
+        bool isWhitelist = verifyWhitelist(_proof);
+        require(isWhitelist, "not in whitelist.");
+
+        uint256 airdropTokens = distribution.airdrop.max_amount / whitelistNum;
+
+        distribution.airdrop.current_amount += airdropTokens;
+
+        (bool success, ) = address(msg.sender).call{value: airdropTokens }("");
+        require(success, "Transaction failed.");
+        
+    }
+
+}  
