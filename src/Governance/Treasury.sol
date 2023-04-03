@@ -58,7 +58,7 @@ contract Treasury{
 
         //初始化owners 和 isOwner map;
         for (uint256 i = 0 ; i< _owners.length; i++){
-            address owner = owners[i];
+            address owner = _owners[i];
             require(owner != address(0), "invalid owner.");
             require(!isOwner[owner], "owner not unique.");
             
