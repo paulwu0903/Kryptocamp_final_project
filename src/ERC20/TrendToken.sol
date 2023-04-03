@@ -137,7 +137,7 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
                 ERC20("TrendToken", "TREND"){
         whitelistNum = 0;
         decimals_ = _decimals;
-        maxSupply = 1000000000;
+        maxSupply = 1000000000000000000000000000;
         tokenPrice = 100000000000000;
         dailyInterest = 170000000000000000000000;
         totalStakedToken = 0;

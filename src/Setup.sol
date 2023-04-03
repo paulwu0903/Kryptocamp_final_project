@@ -9,17 +9,19 @@ import "./Governance/Treasury.sol";
 
 import "./Governance/ICouncil.sol";
 import "./Governance/IProposal.sol";
+import "./Governance/ITreasury.sol";
 import "./ERC20/ITrendToken.sol";
 import "./ERC721A/ITrendMasterNFT.sol";
 
 import "../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 
-contract Setup is Ownable{
+contract SetUp is Ownable{
 
     ICouncil public council;
     IProposal public proposal;
     ITrendToken public trendToken;
     ITrendMasterNFT public trendMasterNFT;
+    ITreasury public treasury;
 
     
 
@@ -33,7 +35,7 @@ contract Setup is Ownable{
         councilInstance.setController(address(proposalInstance));
         trendTokenInstance.setController(address(proposalInstance));
         trendMasterNFTInstance.setController(address(proposalInstance));
-        trendMasterNFT.setController(address(trendMasterNFTInstance));
+        trendMasterNFTInstance.setController(address(proposalInstance));
 
         trendTokenInstance.setDistribution(
             {
@@ -50,7 +52,8 @@ contract Setup is Ownable{
 
         council = ICouncil(address(councilInstance));
         proposal = IProposal(address(proposalInstance));
-        trendToken = ITrendToken(address(treasuryInstance));
+        trendToken = ITrendToken(address(trendTokenInstance));
+        treasury = ITreasury(address(treasuryInstance));
     }
 
     // 更改提案為投票階段
@@ -121,7 +124,29 @@ contract Setup is Ownable{
     {
         trendMasterNFT.setAuction(_startPrice, _endPrice, _priceStep, _startTime, _timeStep, _timeStepNum);
     }
+
+    //開盲
     function openBlindbox() external onlyOwner{
         trendMasterNFT.openBlindbox();
+    }
+
+    function getTreasury () external view returns(address ){
+        return address(treasury);
+    }
+
+    function getTrendToken () external view returns(address ){
+        return address(trendToken);
+    }
+
+    function getTrendMasterNFT () external view returns(address ){
+        return address(trendMasterNFT);
+    }
+
+    function getCouncil () external view returns(address ){
+        return address(council);
+    }
+
+    function getProposal () external view returns(address ){
+        return address(proposal);
     }
 }

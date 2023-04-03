@@ -213,16 +213,19 @@ contract Council is Ownable{
         campaign.votePowers = 0;
         campaign.startTime = type(uint256).max;
 
-        //清除candidates
-        for (uint256 i=candidates.length-1; i >=0 ; i--){
-            delete candidates[i];
-            candidates.pop();
+        if (candidates.length > 0){
+            //清除candidates
+            for (uint256 i=candidates.length-1; i >=0 ; i--){
+                 candidates[i];
+                candidates.pop();
+            }
         }
-
-        //清除confirms
-        for (uint256 i=confirms.length-1; i >=0 ; i--){
-            delete confirms[i];
-            confirms.pop();
+        if (confirms.length > 0){
+            //清除confirms
+            for (uint256 i=confirms.length-1; i >=0 ; i--){
+                delete confirms[i];
+                confirms.pop();
+            }
         }
     }
 
