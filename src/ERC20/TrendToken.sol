@@ -137,9 +137,9 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
                 ERC20("TrendToken", "TREND"){
         whitelistNum = 0;
         decimals_ = _decimals;
-        maxSupply = 1000000000000000000000000000;
+        maxSupply = 1000000000 ether;
         tokenPrice = 100000000000000;
-        dailyInterest = 170000000000000000000000;
+        dailyInterest = 170000 ether;
         totalStakedToken = 0;
         totalStakedTokenHistory.startTime = block.timestamp;
     }
@@ -184,7 +184,7 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
     }
 
     // mint功能，支付ETH購買
-    function mint(uint256 _amount) external nonReentrant notOverMaxSupply(_amount) payable{
+    function publicMint(uint256 _amount) external nonReentrant notOverMaxSupply(_amount) payable{
         require(msg.value >= tokenPrice * _amount, "ETH not enough!!"); //判斷支付費用是否足夠
         require(_amount <= distribution.publicMint.max_amount - distribution.publicMint.current_amount, "Tokens for public Mint are not enough."); //代幣數量是否足夠
         
@@ -197,20 +197,19 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
     //執行代幣分配
     function tokenDistribute() external onlyOwner {
 
-        // 空投、TrendToken質押利息、公售合約即為本合約，故不需要執行代幣轉移
+        // 執行國庫代幣分配
+        initMint(address(distribution.treasury.target), distribution.treasury.max_amount);
+        //執行Token質押代幣分配
+        initMint(address(this), distribution.tokenStakeInterest.max_amount);
+        //執行空投代幣分配
+        initMint(address(this), distribution.airdrop.max_amount);
+        //執行顧問代幣分配
+        initMint(address(distribution.consultant.target), distribution.consultant.max_amount);
+        //執行nft質押代幣分配
+        initMint(address(distribution.nftStakeInterest.target), distribution.nftStakeInterest.max_amount);
+        //執行公售代幣分配
+        initMint(address(distribution.publicMint.target), distribution.publicMint.max_amount);
 
-        //國庫代幣分配
-        (bool treasury_success, ) = address(distribution.treasury.target).call{value: distribution.treasury.max_amount}("");
-        require(treasury_success, "Distrubuting tokens to the treasury contract address failed!");
-
-        //顧問代幣分配
-        (bool consultant_success, ) = address(distribution.consultant.target).call{value: distribution.consultant.max_amount}("");
-        require(consultant_success, "Distrubuting tokens to the consultant address failed!");
-
-        //TrendMaster質押代幣分配
-        (bool nftStakeInterest_success, ) = address(distribution.nftStakeInterest.target).call{value: distribution.nftStakeInterest.max_amount}("");
-        require(nftStakeInterest_success, "Distrubuting tokens to the nft-stake contract address failed!");
-  
     }
 
     //質押
@@ -315,6 +314,18 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
         require(success, "Transaction failed.");
         
     }
+
+    function getController() external view returns (address){
+        return controller;
+    }
+
+    function getWhitelistNum() external view returns (uint256){
+        return whitelistNum;
+    }
+
+    function initMint(address _addr, uint256 _amount) private {
+        _mint(_addr, _amount); 
+    } 
 
 
 }  
