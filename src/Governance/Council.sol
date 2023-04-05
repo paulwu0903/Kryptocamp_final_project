@@ -181,9 +181,9 @@ contract Council is Ownable{
 
         //初始化理事會規範
         rule.memberNumLimit = 10;
-        rule.tokenNumThreshold= 1000000 ether;
-        rule.passVoteNumThreshold= 200;
-        rule.votePowerThreshold= 800;
+        rule.tokenNumThreshold= 1000000;
+        rule.passVoteNumThreshold= 10; //tmp
+        rule.votePowerThreshold= 20; //tmp
         rule.campaignDurationFromCloseToAttend = 86400 seconds;
         rule.campaignDurationFromAttendToVote = 86400 * 7 seconds;
         rule.campaignDurationFromVoteToConfirm = 86400 * 7 seconds;
@@ -191,11 +191,11 @@ contract Council is Ownable{
         rule.recallDurationFromVoteToConfirm = 86400 * 7 seconds;
 
         //初始化取得vote power的token門檻
-        votePowerTokenThreshold.level1 = 100 ether;
-        votePowerTokenThreshold.level2 = 3000 ether;
-        votePowerTokenThreshold.level3 = 10000 ether;
-        votePowerTokenThreshold.level4 = 100000 ether;
-        votePowerTokenThreshold.level5 = 1000000 ether;
+        votePowerTokenThreshold.level1 = 100;
+        votePowerTokenThreshold.level2 = 3000;
+        votePowerTokenThreshold.level3 = 10000;
+        votePowerTokenThreshold.level4 = 100000;
+        votePowerTokenThreshold.level5 = 1000000;
     }
 
     //設定控制者
@@ -307,10 +307,10 @@ contract Council is Ownable{
     }
 
     //建立競選活動，由提案合約觸發
-    function createCampaign(uint256 _electedNum, uint256 _candidateNum, uint256 _startTime) external onlyController isCampaignClosed{
+    function createCampaign(uint256 _electedNum, uint256 _candidateNum) external onlyController isCampaignClosed{
         require((_electedNum + members.length) < rule.memberNumLimit, "it will over members limit.");
         require(recallActivity.recallPhase == RecallPhase.CLOSED, "Recall is active.");
-        require(_startTime >= block.timestamp, "start time is over.");
+        
         campaign.campaignPhase = CampaignPhase.CANDIDATE_ATTENDING;
         campaign.candidateNum = _candidateNum;
         campaign.electedNum= _electedNum;
@@ -419,7 +419,7 @@ contract Council is Ownable{
     function getRemainVotePower() public returns(uint256){
 
         if (votePowerMap[msg.sender] == 0){
-            uint256 balance = trendToken.balanceOf(msg.sender);
+            uint256 balance = trendToken.stakedBalanceOf(msg.sender);
             uint256 votePower = 0;
 
             if (balance < votePowerTokenThreshold.level1){
@@ -532,5 +532,21 @@ contract Council is Ownable{
     function copyCandidatesToConfirms(Candidate[] storage _candidates) private{
         confirms = _candidates;
     } 
+
+    function getController() external view returns (address){
+        return controller;
+    }
+
+    function getCampaignPhase() external view returns(uint256 phase){
+        if (campaign.campaignPhase == CampaignPhase.CLOSED){
+            phase = 0;
+        }else if (campaign.campaignPhase == CampaignPhase.CANDIDATE_ATTENDING){
+            phase = 1;
+        }else if (campaign.campaignPhase == CampaignPhase.VOTING){
+            phase = 2;
+        }else if (campaign.campaignPhase == CampaignPhase.CONFIRMING){
+            phase = 3;
+        }
+    }
 
 }

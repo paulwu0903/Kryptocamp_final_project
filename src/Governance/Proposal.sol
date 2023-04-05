@@ -114,18 +114,18 @@ contract Proposal is Ownable{
         council = ICouncil(_council);
 
         //提案規範初始化
-        proposalRule.tokenNumThreshold = 10000 ether;
-        proposalRule.votePowerThreshold = 800;
+        proposalRule.tokenNumThreshold = 10000 ;
+        proposalRule.votePowerThreshold = 10;
         proposalRule.proposalDurationFromCloseToVote = 86400 seconds;
         proposalRule.proposalDurationFromVoteToConfirm = 86400 * 7 seconds;
 
 
         //初始化取得vote power的token門檻
-        proposalVotePowerThreshold.level1 = 100 ether;
-        proposalVotePowerThreshold.level2 = 3000 ether;
-        proposalVotePowerThreshold.level3 = 10000 ether;
-        proposalVotePowerThreshold.level4 = 100000 ether;
-        proposalVotePowerThreshold.level5 = 1000000 ether;
+        proposalVotePowerThreshold.level1 = 100;
+        proposalVotePowerThreshold.level2 = 3000;
+        proposalVotePowerThreshold.level3 = 10000;
+        proposalVotePowerThreshold.level4 = 100000;
+        proposalVotePowerThreshold.level5 = 1000000;
 
     }
 
@@ -137,24 +137,30 @@ contract Proposal is Ownable{
 
     //判斷提案是否為VOTING狀態
     modifier isProposalVoting(uint256 _proposalIndex){
-        require(proposals[_proposalIndex].proposalPhase == ProposalPhase.CLOSED, "not at VOTING phase.");
+        require(proposals[_proposalIndex].proposalPhase == ProposalPhase.VOTING, "not at VOTING phase.");
         _;
     }
     //判斷提案是否為CONFIRMING狀態
     modifier isProposalConfirming(uint256 _proposalIndex){
-        require(proposals[_proposalIndex].proposalPhase == ProposalPhase.CLOSED, "not at CONFIRMING phase.");
+        require(proposals[_proposalIndex].proposalPhase == ProposalPhase.CONFIRMING, "not at CONFIRMING phase.");
         _;
     }
 
-    //判斷提案是否為FINISHED狀態
-    modifier isProposalFinished(uint256 _proposalIndex){
-        require(proposals[_proposalIndex].proposalPhase == ProposalPhase.CLOSED, "not at FINISHED phase.");
+    //判斷提案是否為EXECUTED狀態
+    modifier isProposalExecuted(uint256 _proposalIndex){
+        require(proposals[_proposalIndex].proposalPhase == ProposalPhase.EXECUTED, "not at EXECUTED phase.");
+        _;
+    }
+
+    //判斷提案是否為REJECTED狀態
+    modifier isProposalRejected(uint256 _proposalIndex){
+        require(proposals[_proposalIndex].proposalPhase == ProposalPhase.REJECTED, "not at REJECTED phase.");
         _;
     }
 
     //提案者資金達標
     modifier isTokenEnoughToPropose{
-        require(address(msg.sender).balance >= proposalRule.tokenNumThreshold);
+        require(trendToken.balanceOf(address(msg.sender)) >= proposalRule.tokenNumThreshold, "trendTokens not enough to propose.");
         _;
     }
 
@@ -166,7 +172,7 @@ contract Proposal is Ownable{
 
     //提案格式檢查
     modifier rightProposalFormat(
-        ProposalType _proposalType,
+        uint256 _typeIndex,
         string memory _title,
         string memory _description,
         uint256[] memory _paramsUint,
@@ -174,8 +180,10 @@ contract Proposal is Ownable{
         uint256 _startTime)
     {
         //keccak256(abi.encodePacked(_str1)) == keccak256(abi.encodePacked(_str2))
-        require(keccak256(abi.encodePacked(_title)) == keccak256(abi.encodePacked("")), "title is empty.");
+        require(keccak256(abi.encodePacked(_title)) != keccak256(abi.encodePacked("")), "title is empty.");
         require(_startTime >= block.timestamp, "time is over.");
+
+        ProposalType _proposalType = getProposalType(_typeIndex);
 
         if(_proposalType ==  ProposalType.ADD_COUNCIL ||
            _proposalType ==  ProposalType.ADJUST_COUNCIL_RECALL_DURATION ||
@@ -222,13 +230,13 @@ contract Proposal is Ownable{
     }
 
     //更改提案狀態至VOTING
-    function changeProposalPhaseToVoting (uint256 _proposalIndex) external onlyController{
+    function changeProposalPhaseToVoting (uint256 _proposalIndex) external onlyOwner{
         require(proposals[_proposalIndex].startTime + proposalRule.proposalDurationFromCloseToVote < block.timestamp, "not arrive voting time.");
         proposals[_proposalIndex].proposalPhase = ProposalPhase.VOTING;
     }
 
     //更改提案狀態至VOTING
-    function changeProposalPhaseToConfirming (uint256 _proposalIndex) external onlyController{
+    function changeProposalPhaseToConfirming (uint256 _proposalIndex) external onlyOwner{
         require(proposals[_proposalIndex].startTime + proposalRule.proposalDurationFromCloseToVote + proposalRule.proposalDurationFromVoteToConfirm < block.timestamp, "not arrive confirming time.");
         proposals[_proposalIndex].proposalPhase = ProposalPhase.CONFIRMING;
     
@@ -242,7 +250,7 @@ contract Proposal is Ownable{
 
     //提案
     function propose(
-        ProposalType _proposalType,
+        uint256 _typeIndex,
         string memory _title,
         string memory _description,
         uint256[] memory _paramsUint,
@@ -251,7 +259,7 @@ contract Proposal is Ownable{
     external 
     isTokenEnoughToPropose
     rightProposalFormat(
-        _proposalType,
+        _typeIndex,
         _title,
         _description,
         _paramsUint,
@@ -259,6 +267,8 @@ contract Proposal is Ownable{
         _startTime
     )
     {
+        ProposalType _proposalType = getProposalType(_typeIndex);
+
         proposals.push(Template(
             {
                 proposalType: _proposalType,
@@ -298,7 +308,7 @@ contract Proposal is Ownable{
     //提案投票
     function proposalVote(uint256 _proposalIndex) external isProposalVoting(_proposalIndex){
         require(!isProposalVote[_proposalIndex][msg.sender], "already vote.");
-        uint256 votePower = getProposalVotePower();
+        uint256 votePower = getProposalVotePowerOfUser();
 
         Template storage proposal = proposals[_proposalIndex];
         proposal.votePowers += votePower;
@@ -330,9 +340,9 @@ contract Proposal is Ownable{
     }
 
     //取得Proposal投票力
-    function getProposalVotePower()public view returns(uint256){
+    function getProposalVotePowerOfUser()public view returns(uint256){
         
-        uint256 balance = trendToken.balanceOf(msg.sender);
+        uint256 balance = trendToken.stakedBalanceOf(msg.sender);
         uint256 votePower = 0;
 
         if (balance < proposalVotePowerThreshold.level1){
@@ -354,7 +364,7 @@ contract Proposal is Ownable{
     }
 
     //提案結算並執行
-    function proposalConfirm(uint256 _proposalIndex) external isProposalConfirming(_proposalIndex){
+    function proposalConfirm(uint256 _proposalIndex) external onlyOwner isProposalConfirming(_proposalIndex){
         Template storage proposal = proposals[_proposalIndex];
 
         if(proposal.votePowers < proposalRule.votePowerThreshold ){
@@ -424,4 +434,63 @@ contract Proposal is Ownable{
             trendToken.setInterest( _proposal.paramsUint[0]);
         }
     }    
+
+    function getController() external view returns (address){
+        return controller;
+    }
+
+    function getProposalType(uint256 _index) private pure returns(ProposalType res){
+        if (_index == 0 ){
+            return ProposalType.ADD_COUNCIL;
+        }else if(_index == 1 ){
+            return ProposalType.REMOVE_COUNCIL;
+        }else if(_index == 2 ){
+            return ProposalType.ADJUST_COUNCIL_CANDIDATE_TOKEN_NUM_THRESHOLD;
+        }else if(_index == 3 ){
+            return ProposalType.ADJUST_COUNCIL_CAMPAIGN_VOTE_POWER_THRESHOLD;
+        }else if(_index == 4 ){
+            return ProposalType.ADJUST_COUNCIL_MEMBER_LIMIT;
+        }else if(_index == 5 ){
+            return ProposalType.ADJUST_COUNCIL_VOTE_POWER_TOKEN_THRESHOLD;
+        }else if(_index == 6 ){
+            return ProposalType.ADJUST_COUNCIL_CAMPAIGN_PASS_VOTE_POWER_THRESHOLD;
+        }else if(_index == 7 ){
+            return ProposalType.ADJUST_COUNCIL_CAMPAIGN_DURATION;
+        }else if(_index == 8 ){
+            return ProposalType.ADJUST_COUNCIL_RECALL_DURATION;
+        }else if(_index == 9 ){
+            return ProposalType.ADJUST_PROPOSAL_VOTE_POWER_THRESHOLD;
+        }else if(_index == 10 ){
+            return ProposalType.ADJUST_PROPOSAL_TOKEN_NUM_THRESHOLD;
+        }else if(_index == 11 ){
+            return ProposalType.ADJUST_PROPOSAL_DURATION;
+        }else if(_index == 12 ){
+            return ProposalType.ADJUST_PROPOSAL_VOTE_POWER_TOKEN_THRESHOLD;
+        }else if(_index == 13 ){
+            return ProposalType.ADJUST_TREASURY_CONFIRM_NUM_THRESHOLD;
+        }else if(_index == 14 ){
+            return ProposalType.ADJUST_TREND_MASTER_DAILY_INTEREST;
+        }else if(_index == 15 ){
+            return ProposalType.ADJUST_TREND_TOKEN_DAILY_INTEREST;
+        }
+    }
+    function getProposalPhaseIndex(uint256 _index) external view returns (uint256 phase){
+        if(proposals[_index].proposalPhase == ProposalPhase.CLOSED){
+            phase = 0;
+        }else if (proposals[_index].proposalPhase == ProposalPhase.VOTING){
+            phase = 1;
+        }else if (proposals[_index].proposalPhase == ProposalPhase.CONFIRMING){
+            phase = 2;
+        }else if (proposals[_index].proposalPhase == ProposalPhase.EXECUTED){
+            phase = 3;
+        }else if (proposals[_index].proposalPhase == ProposalPhase.REJECTED){
+            phase = 4;
+        }
+    }
+
+    function getProposalVotePower(uint256 _proposalIndex) external view returns(uint256){
+        return proposals[_proposalIndex].votePowers;
+    }
+
+    
 }

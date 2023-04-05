@@ -35,25 +35,25 @@ contract SetUp is Ownable{
         councilInstance.setController(address(proposalInstance));
         trendTokenInstance.setController(address(proposalInstance));
         trendMasterNFTInstance.setController(address(proposalInstance));
-        trendMasterNFTInstance.setController(address(proposalInstance));
 
         trendTokenInstance.setDistribution(
             {
                 _treasury_address: address(treasuryInstance),
-                _treasury_amount: 200000000000000000000000000, 
-                _tokenStakeInterest_amount: 250000000000000000000000000, 
+                _treasury_amount: 200000000, 
+                _tokenStakeInterest_amount: 250000000, 
                 _consultant_address: address(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed), 
-                _consultant_amount: 30000000000000000000000000, 
-                _airdrop_amount: 20000000000000000000000000, 
+                _consultant_amount: 30000000, 
+                _airdrop_amount: 20000000, 
                 _nftStakeInterest_address: address(trendMasterNFTInstance), 
-                _nftStakeInterest_amount: 300000000000000000000000000, 
-                _publicMint_amount: 200000000000000000000000000
+                _nftStakeInterest_amount: 300000000, 
+                _publicMint_amount: 200000000
             });
 
         council = ICouncil(address(councilInstance));
         proposal = IProposal(address(proposalInstance));
         trendToken = ITrendToken(address(trendTokenInstance));
         treasury = ITreasury(address(treasuryInstance));
+        trendMasterNFT = ITrendMasterNFT(address(trendMasterNFTInstance));
     }
 
     // 更改提案為投票階段
@@ -64,6 +64,10 @@ contract SetUp is Ownable{
     // 更改提案為確認階段
     function changeProposalPhaseTocConfirming(uint256 _proposalIndex) external onlyOwner{
         proposal.changeProposalPhaseToConfirming(_proposalIndex);
+    }
+    //提案結算
+    function proposalConfirm(uint256 _proposalIndex) external onlyOwner{
+        proposal.proposalConfirm(_proposalIndex);
     }
 
     //更改競選為候選人報名階段
@@ -91,16 +95,15 @@ contract SetUp is Ownable{
         council.changeRecallToConfirming();
     }
 
-    //發放空投
-    function sendAirdrop() external onlyOwner{
-        trendToken.sendAirdrop();
+    //代幣分配
+    function tokenDistribute() external onlyOwner{
+        trendToken.tokenDistribute();
     }
 
     //設定token空投白名單數量
     function setWhitelistNum(uint256 _whitelistNum) external onlyOwner{
         trendToken.setWhitelistNum(_whitelistNum);
     }
-
 
     //給前端定期呼叫
     function updateTotalStakedTokenHistory() external onlyOwner{

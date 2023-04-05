@@ -98,7 +98,7 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
         isOpen = [false, false, false]; //分三批開盲
         openNum = [500, 300,200];
 
-        dailyInterest = 200000000000000000000000;
+        dailyInterest = 200000;
 
         trendToken = ITrendToken(_trendTokenAddress);
     }
@@ -289,6 +289,10 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
         }
 
         return totalReward;
+    }
+
+    function getController() external view returns (address){
+        return controller;
     }
 
 

@@ -8,5 +8,6 @@ interface ITrendMasterNFT{
     function setAuction(uint256 _startPrice, uint256 _endPrice, uint256 _priceStep, uint256 _startTime, uint256 _timeStep, uint256 _timeStepNum) external;
     function openBlindbox() external;
     function setController(address _controllerAddress) external;
+    function getController() external view returns (address);
 
 }

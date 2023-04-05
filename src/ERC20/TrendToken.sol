@@ -62,7 +62,7 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
     //代幣分配
     Distribution public distribution; 
 
-    //address => tokenId => 質押資訊
+    //address =>  質押資訊
     mapping (address => TokenStakedInfo) public stakeInfoMap;
 
     
@@ -72,12 +72,6 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
 
     //利息
     uint256 public dailyInterest;
-
-    //檢查是否超出最大供給量
-    modifier notOverMaxSupply(uint256 _amount){
-        require(totalSupply() + _amount <= maxSupply, "Over the max supply.");
-        _;
-    }
 
     //是否為controller
     modifier onlyController {
@@ -137,9 +131,9 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
                 ERC20("TrendToken", "TREND"){
         whitelistNum = 0;
         decimals_ = _decimals;
-        maxSupply = 1000000000 ether;
-        tokenPrice = 100000000000000;
-        dailyInterest = 170000 ether;
+        maxSupply = 1000000000 ;
+        tokenPrice = 10000 gwei;
+        dailyInterest = 170000;
         totalStakedToken = 0;
         totalStakedTokenHistory.startTime = block.timestamp;
     }
@@ -184,7 +178,7 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
     }
 
     // mint功能，支付ETH購買
-    function publicMint(uint256 _amount) external nonReentrant notOverMaxSupply(_amount) payable{
+    function publicMint(uint256 _amount) external nonReentrant payable{
         require(msg.value >= tokenPrice * _amount, "ETH not enough!!"); //判斷支付費用是否足夠
         require(_amount <= distribution.publicMint.max_amount - distribution.publicMint.current_amount, "Tokens for public Mint are not enough."); //代幣數量是否足夠
         
@@ -209,12 +203,11 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
         initMint(address(distribution.nftStakeInterest.target), distribution.nftStakeInterest.max_amount);
         //執行公售代幣分配
         initMint(address(distribution.publicMint.target), distribution.publicMint.max_amount);
-
     }
 
     //質押
     function stakeToken(uint256 _stakeAmount) external {
-        require(balanceOf(msg.sender) - stakeInfoMap[msg.sender].totalStaked > _stakeAmount, "token not enough");
+        require(balanceOf(msg.sender) - stakeInfoMap[msg.sender].totalStaked >= _stakeAmount, "token not enough");
         require(block.timestamp < totalStakedTokenHistory.startTime + (86400 * 365 * 4), "stake-mechanism was closed.");
         stakeInfoMap[msg.sender].stakes.push(
             Stake(
@@ -326,6 +319,10 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
     function initMint(address _addr, uint256 _amount) private {
         _mint(_addr, _amount); 
     } 
+    
+    function stakedBalanceOf(address _addr) external view returns(uint256) {
+        return stakeInfoMap[_addr].totalStaked;
+    }
 
 
 }  

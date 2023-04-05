@@ -17,5 +17,7 @@ interface ICouncil{
     function changeRecallToConfirming() external;
     function setCampaignDuration(uint256 _closeToAttend, uint256 _attendToVote, uint256 _voteToConfirm) external;
     function setRecallDuration(uint256 _closeToVote, uint256 _voteToConfirm) external;
+    function getController() external view returns (address);
+    function getCampaignPhase() external view returns(uint256 phase);
     
 }
