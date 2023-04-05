@@ -56,6 +56,11 @@ contract SetUp is Ownable{
         trendMasterNFT = ITrendMasterNFT(address(trendMasterNFTInstance));
     }
 
+    //競選結算
+    function campaignConfirm() external onlyOwner{
+        council.campaignConfirm();
+    }
+
     // 更改提案為投票階段
     function changeProposalPhaseToVoting(uint256 _proposalIndex) external onlyOwner{
         proposal.changeProposalPhaseToVoting(_proposalIndex);

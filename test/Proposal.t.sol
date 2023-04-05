@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
 import "../src/SetUp.sol";
@@ -7,41 +7,6 @@ import "../src/ERC20/ITrendToken.sol";
 import "../src/Governance/IProposal.sol";
 
 contract ProposalTest is Test {
-    /*
-    * Token&NFT白名單：
-    [
-        "0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed",
-        "0xC0ACE560563cc90b6f4E8CEd54f44d1348f7706d",
-        "0x0555187CccE757Aa48259dF9433342B02aF16b6f"
-    ]
-    * Token&NFT持幣者
-    [
-        "0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed",
-        "0xC0ACE560563cc90b6f4E8CEd54f44d1348f7706d",
-        "0x0555187CccE757Aa48259dF9433342B02aF16b6f",
-        "0xaB084bCF2a30B457D71bDE1894de8014619A221A",
-        "0x6337c10F0DfcE4f813306f577A04c42132F7dCb2",
-        "0x5E56672df2929E9EA6427186d1F8dD7c282e61C1",
-        "0xD7C20d7178AA5c47C890dF272f449c902731b411",
-        "0x60d3A1B09a4b26E109c209cd5350c40E11cf22D9",
-        "0x54d3b43B7c8482d44b5788C9094c319028e6ee2e",
-        "0xE7918DBc151Bf711d7E2DFe8d19F686B2938A7AF",
-        "0x3093E7b4E269d68Db272399754c06abA62a4F97c",
-        "0xf80b09E4c6c8248313137101E62B5723Dd6C5ce5"
-    ]
-    * 理事會初始成員：
-    [
-        "0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed",
-        "0xaB084bCF2a30B457D71bDE1894de8014619A221A",
-        "0x6337c10F0DfcE4f813306f577A04c42132F7dCb2"
-    ]
-    * Merkle Root: 0x2a065c8996e5b1d0d2eb049481ca88b0a5d3d0726ccfbbddeee360ef3b2d9a9d
-    * Proof:
-        "0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed": ["0xd9511d4191d23da76e36c962411c0ce0a78b6ea027015b2f62547b08bd8cc670","0x18a86edcdaf4f46c46087ca54b2dd19abadfe267e062f7d6f7d4863f2b4d1543"]
-        "0xC0ACE560563cc90b6f4E8CEd54f44d1348f7706d": ["0x47e7798a0359a8c1ce48528fbcd5cc6c61b7103e1ab439bc0fe4681dbd893fb5","0x18a86edcdaf4f46c46087ca54b2dd19abadfe267e062f7d6f7d4863f2b4d1543"]
-        "0x0555187CccE757Aa48259dF9433342B02aF16b6f": ["0x943b0514edc0ffde1a18fd06c81a419d5e0cde9d7511f0bc06a981b60356598c"]
-     */
-    
     
     SetUp public setUpInstance;
     IProposal public proposal;
@@ -102,10 +67,23 @@ contract ProposalTest is Test {
         changeProposalPhaseToConfirming();
         //結案
         propsalConfirming();
-        //檢查是否觸發理事會選舉
-        //assertEq();
-        
+
     }
+    function testProposalConfirming() external {
+        //新增理事會提案
+        proposeExample();
+        // 初始化資金&質押
+        dealHoldersAndMintTrendToken();
+        //項目方更改提案階段為投票階段
+        changeProposalPhaseToVote();
+        //投票
+        proposalVoting();
+        //項目方更改提案狀態為CONFIRMING
+        changeProposalPhaseToConfirming();
+        //結案
+        propsalConfirming();
+    }
+
     function proposeExample() public {
         IProposal proposal = IProposal(setUpInstance.getProposal());
         uintArr.push(2);
@@ -252,11 +230,4 @@ contract ProposalTest is Test {
 
         assertEq(proposal.getProposalPhaseIndex(0), 3);
     }
-
-    
-
-
-
-    
-
 }

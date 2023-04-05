@@ -91,6 +91,9 @@ contract Council is Ownable{
     //理事會成員
     Member[] public members;
 
+    //是否為理事會map
+    mapping (address => bool) public isMemberMap;
+
     //候選名單
     Candidate[] public candidates;
 
@@ -167,6 +170,11 @@ contract Council is Ownable{
         require(controller == msg.sender, "not controller.");
         _;
     }
+    //是否已為理事會成員
+    modifier notCouncilMember{
+        require(!isMemberMap[msg.sender], "already in council.");
+        _;
+    }
 
     constructor (address _trendTokenAddress, address _treasuryAddress){
         //載入國庫合約
@@ -181,7 +189,7 @@ contract Council is Ownable{
 
         //初始化理事會規範
         rule.memberNumLimit = 10;
-        rule.tokenNumThreshold= 1000000;
+        rule.tokenNumThreshold= 10000;
         rule.passVoteNumThreshold= 10; //tmp
         rule.votePowerThreshold= 20; //tmp
         rule.campaignDurationFromCloseToAttend = 86400 seconds;
@@ -211,20 +219,30 @@ contract Council is Ownable{
         campaign.electedNum = 0;
         campaign.candidateNum = 10;
         campaign.votePowers = 0;
-        campaign.startTime = type(uint256).max;
+        campaign.startTime = 0;
 
-        if (candidates.length > 0){
-            //清除candidates
-            for (uint256 i=candidates.length-1; i >=0 ; i--){
-                 candidates[i];
+        //清除candidates
+        if (candidates.length > 0){   
+            uint256 i = candidates.length-1;
+            while(i >= 0){
+                delete candidates[i];
                 candidates.pop();
+                if (i==0){
+                    break;
+                }
+                i--;
             }
         }
+        //清除confirms
         if (confirms.length > 0){
-            //清除confirms
-            for (uint256 i=confirms.length-1; i >=0 ; i--){
+            uint256 i = confirms.length-1;
+            while(i >= 0){
                 delete confirms[i];
                 confirms.pop();
+                if (i==0){
+                    break;
+                }
+                i--;
             }
         }
     }
@@ -315,42 +333,48 @@ contract Council is Ownable{
         campaign.candidateNum = _candidateNum;
         campaign.electedNum= _electedNum;
         campaign.votePowers = 0;
+        campaign.startTime = block.timestamp;
     }
 
     //更改競選階段為CANDIDATE_ATTENDING
-    function changeCampaignToCandidateAttending() external onlyController isCampaignClosed{
+    function changeCampaignToCandidateAttending() external onlyOwner isCampaignClosed{
         require(campaign.startTime + rule.campaignDurationFromCloseToAttend < block.timestamp, "not arrive candidate attending time.");
         campaign.campaignPhase = CampaignPhase.CANDIDATE_ATTENDING;
     }
 
     //更改競選階段為VOTING
-    function changeCampaignToVoting() external onlyController isCampaignCandidateAttending{
+    function changeCampaignToVoting() external onlyOwner isCampaignCandidateAttending{
         require(campaign.startTime + rule.campaignDurationFromCloseToAttend + rule.campaignDurationFromAttendToVote< block.timestamp, "not arrive voting time.");
         campaign.campaignPhase = CampaignPhase.VOTING;
     }
 
     //更改競選階段為CONFIRMING
-    function changeCampaignToConforming() external onlyController isCampaignVoting{
+    function changeCampaignToConforming() external onlyOwner isCampaignVoting{
         require(campaign.startTime + rule.campaignDurationFromCloseToAttend + rule.campaignDurationFromAttendToVote + rule.campaignDurationFromVoteToConfirm< block.timestamp, "not arrive confirming time.");
         campaign.campaignPhase = CampaignPhase.CONFIRMING;
 
         //清掉投票暫存
-        for (uint256 i=voters.length-1; i >= 0; i--){
+        uint256 i = voters.length-1;
+        while(i <= voters.length-1){
             delete isVote[voters[i]];
             delete votePowerMap[voters[i]];
             delete voters[i];
             voters.pop();
+            if (i == 0) {
+                break;
+            }
+            i--;
         }
     }
 
     //更改罷免階段為VOTING
-    function changeRecallToVoting() external onlyController isRecallClosed{
+    function changeRecallToVoting() external onlyOwner isRecallClosed{
         require(recallActivity.startTime + rule.recallDurationFromCloseToVote< block.timestamp, "not arrive voting time.");
         recallActivity.recallPhase = RecallPhase.VOTING;
     }
 
     //更改罷免階段為CONFIRMING
-    function changeRecallToConfirming() external onlyController isRecallVoting{
+    function changeRecallToConfirming() external onlyOwner isRecallVoting{
         require(recallActivity.startTime + rule.recallDurationFromCloseToVote + rule.recallDurationFromVoteToConfirm< block.timestamp, "not arrive confirming time.");        
         recallActivity.recallPhase = RecallPhase.CONFIRMING;
 
@@ -364,11 +388,12 @@ contract Council is Ownable{
     }
 
     //參加競選
-    function participate(string memory _name, string memory _politicalBriefing) external isCampaignCandidateAttending{
+    function participate(string memory _name, string memory _politicalBriefing) external isCampaignCandidateAttending notCouncilMember{
         //檢查參選者幣量是否大於規定數量
         require(trendToken.balanceOf(msg.sender) >= rule.tokenNumThreshold, "TrendToken not enough!");
         //是否超出候選人上限
         require((candidates.length +1) <= campaign.candidateNum, "Candidates arrives max number.");
+        //是否已為理事會
         
         candidates.push( Candidate(
                 {
@@ -383,9 +408,8 @@ contract Council is Ownable{
 
     //競選投票
     function campaignVote(uint8 _candidateindex, uint256 _votePower) external isCampaignVoting{
-        uint256 remainVotePower = getRemainVotePower();
-        require(remainVotePower != 0 , "vote power is 0.");
-        require(_votePower <= remainVotePower, "vote power not enough.");
+        uint256 remainVotePower = getRemainVotePower(msg.sender);
+        require((_votePower <= remainVotePower) && (remainVotePower != 0) , "vote power not enough.");
         Candidate storage candidate = candidates[_candidateindex];
         
         campaign.votePowers += _votePower;
@@ -401,9 +425,8 @@ contract Council is Ownable{
 
     //罷免投票
     function recallVote(uint256 _votePower) external isRecallVoting{
-        uint256 remainVotePower = getRemainVotePower();
-        require(remainVotePower != 0 , "vote power is 0.");
-        require(_votePower <= remainVotePower, "vote power not enough.");
+        uint256 remainVotePower = getRemainVotePower(msg.sender);
+        require((_votePower <= remainVotePower) && (remainVotePower != 0) , "vote power not enough.");
 
         recallActivity.votePowers += _votePower;
         votePowerMap[msg.sender] -= _votePower;
@@ -416,10 +439,10 @@ contract Council is Ownable{
     }
 
     //取得剩餘多少票
-    function getRemainVotePower() public returns(uint256){
+    function getRemainVotePower(address _addr) public returns(uint256){
 
-        if (votePowerMap[msg.sender] == 0){
-            uint256 balance = trendToken.stakedBalanceOf(msg.sender);
+        if (votePowerMap[_addr] == 0){
+            uint256 balance = trendToken.stakedBalanceOf(_addr);
             uint256 votePower = 0;
 
             if (balance < votePowerTokenThreshold.level1){
@@ -436,12 +459,12 @@ contract Council is Ownable{
                 votePower = 25;
             }
 
-            votePowerMap[msg.sender] = votePower;
+            votePowerMap[_addr] = votePower;
 
             return votePower;
 
         }else{
-            return votePowerMap[msg.sender];
+            return votePowerMap[_addr];
         }   
     }
 
@@ -456,6 +479,7 @@ contract Council is Ownable{
 
             for (uint256 i =0; i < members.length; i++){
                 if (members[i].memberAddress == recallActivity.recallAddress){
+                    isMemberMap[recallActivity.recallAddress] = false;
                     for (uint256 j = i; j < members.length - 1; i++){
                         members[i] = members[i + 1];
                     }
@@ -474,7 +498,7 @@ contract Council is Ownable{
 
 
     //競選結算
-    function campaignComfirm() external isCampaignConfirming{
+    function campaignConfirm() external onlyOwner isCampaignConfirming{
         //總投票力未達標，競選無效
         if (campaign.votePowers < rule.votePowerThreshold){
             initCampaign();
@@ -486,27 +510,39 @@ contract Council is Ownable{
         sortConfirms();
 
         //留下本次競選所需的當選量
-        for (uint256 i= confirms.length-1; i >= campaign.electedNum; i--){
+        uint256 i = confirms.length-1;
+        while(i >= 0){
             delete confirms[i];
             confirms.pop();
+            if (i==campaign.electedNum){
+                break;
+            }
+            i--;
         }
         
         //留下票數門檻達標的候選人
-        for(uint256 i=confirms.length-1; i >=0 ; i--){
+        i = confirms.length-1;
+        while(i >= 0){
             if (confirms[i].receivedVotePowers < rule.passVoteNumThreshold){
                 delete confirms[i];
                 confirms.pop();
             }
+            if (i==0){
+                break;
+            }
+            i--;
         }
+        
         //若confirms中不為空，則設定成為國庫owner
         if (confirms.length >0){
-            for(uint256 i=0; i < confirms.length; i++){
-                treasury.addOwner(confirms[i].candidateAddress);
+            for(uint256 j=0; j < confirms.length; j++){
+                isMemberMap[confirms[j].candidateAddress] = true;
+                treasury.addOwner(confirms[j].candidateAddress);
                 members.push(Member({
-                    memberAddress: confirms[i].candidateAddress,
-                    name: confirms[i].name,
-                    politicalBriefing: confirms[i].politicalBriefing,
-                    receivedVotePowers:  confirms[i].receivedVotePowers,
+                    memberAddress: confirms[j].candidateAddress,
+                    name: confirms[j].name,
+                    politicalBriefing: confirms[j].politicalBriefing,
+                    receivedVotePowers:  confirms[j].receivedVotePowers,
                     timestamp: block.timestamp
                 }));
             }
@@ -516,8 +552,26 @@ contract Council is Ownable{
 
     //由小到大排序 confirms
     function sortConfirms() private {
+        uint256 i=confirms.length-1;
 
-	    for(uint256 i=confirms.length-1; i> 0; i--){
+        while(i >= 0){
+            for(uint256 j= confirms.length-1; j< confirms.length-1-i; j--){
+                if (confirms[j].receivedVotePowers > confirms[j-1].receivedVotePowers){
+				    Candidate memory confirmTmp = candidates[j];
+				    confirms[j] = confirms[j-1];
+				    confirms[j-1] = confirmTmp;
+			    }
+                if(j ==0){
+                    break;
+                }
+            }
+            if (i == 1 ){
+                break;
+            }
+            i--;
+        }
+
+	    /*for(uint256 i=confirms.length-1; i> 0; i--){
 		    for(uint256 j= confirms.length-1; j< confirms.length-1-i; j--){
 			    if (confirms[j].receivedVotePowers > confirms[j-1].receivedVotePowers){
 				    Candidate memory confirmTmp = candidates[j];
@@ -525,7 +579,7 @@ contract Council is Ownable{
 				    confirms[j-1] = confirmTmp;
 			    }
 		    }
-	    }
+	    }*/
     }   
     // copy candidates到comfirms
     //TODO:確認這種複製方式，會不會影響candidates
@@ -547,6 +601,18 @@ contract Council is Ownable{
         }else if (campaign.campaignPhase == CampaignPhase.CONFIRMING){
             phase = 3;
         }
+    }
+
+    function getCampaignStartTime() external view returns(uint256 time){
+        return campaign.startTime;
+    }
+
+    function getCandidateNum() external view returns(uint256){
+        return candidates.length;
+    }
+
+    function getVotersNum() external view returns(uint256){
+        return voters.length;
     }
 
 }
