@@ -51,61 +51,6 @@ contract CouncilTest is Test {
 
     }
 
-    function testCreateCouncilCampaign() public {
-        //新增理事會提案
-        proposeExample();
-        // 初始化資金&質押
-        dealHoldersAndMintTrendToken();
-        //項目方更改提案階段為投票階段
-        changeProposalPhaseToVote();
-        //投票
-        proposalVoting();
-        //項目方更改提案狀態為CONFIRMING
-        changeProposalPhaseToConfirming();
-        //結案
-        propsalConfirming();
-        //檢查是否觸發理事會選舉
-        assertEq(council.getCampaignPhase(), 1);
-        assertTrue(council.getCampaignStartTime() > 0);  
-    }
-
-    function testCandidateAttending() public {
-        //新增理事會提案
-        proposeExample();
-        // 初始化資金&質押
-        dealHoldersAndMintTrendToken();
-        //項目方更改提案階段為投票階段
-        changeProposalPhaseToVote();
-        //投票
-        proposalVoting();
-        //項目方更改提案狀態為CONFIRMING
-        changeProposalPhaseToConfirming();
-        //結案
-        propsalConfirming();
-        // 候選人參選
-        candidateAttending();
-    }
-
-    function testCampaignVoting() public {
-        //新增理事會提案
-        proposeExample();
-        // 初始化資金&質押
-        dealHoldersAndMintTrendToken();
-        //項目方更改提案階段為投票階段
-        changeProposalPhaseToVote();
-        //投票
-        proposalVoting();
-        //項目方更改提案狀態為CONFIRMING
-        changeProposalPhaseToConfirming();
-        //結案
-        propsalConfirming();
-        // 候選人參選
-        candidateAttending();
-        // 項目方更改競選階段為投票階段
-        changeCampaignPhaseToVoting();
-        //理事會競選投票
-        campaignVote(); 
-    }
 
     function testCampaignConfirming() public {
         //新增理事會提案
@@ -114,11 +59,11 @@ contract CouncilTest is Test {
         dealHoldersAndMintTrendToken();
         //項目方更改提案階段為投票階段
         changeProposalPhaseToVote();
-        //投票
+        //提案投票
         proposalVoting();
-        //項目方更改提案狀態為CONFIRMING
+        //項目方更改提案狀態為結算階段
         changeProposalPhaseToConfirming();
-        //結案
+        //提案結算
         propsalConfirming();
         // 候選人參選
         candidateAttending();
@@ -128,12 +73,13 @@ contract CouncilTest is Test {
         campaignVote();
         // 項目方更改競選階段為結算階段
         changeCampaignPhaseToConfirming();
-        //結算
+        //理事會競選結算
         campaignConfirm();
-
+        //檢查國庫owner是否新增
         assertEq(treasury.getOwner().length, 5);
     }
 
+    //理事會競選結算
     function campaignConfirm() public {
         vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
         setUpInstance.campaignConfirm();
@@ -141,7 +87,7 @@ contract CouncilTest is Test {
 
         //assertEq(council.getCampaignPhase(), 0);
     }
-
+    // 項目方更改競選階段為結算階段
     function changeCampaignPhaseToConfirming() public {
         vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
         vm.warp(block.timestamp + 86400 *7 *3);
@@ -149,7 +95,7 @@ contract CouncilTest is Test {
         vm.stopPrank();
         //assertEq(council.getCampaignPhase(), 3);
     }
-
+    // 項目方更改競選階段為投票階段
     function changeCampaignPhaseToVoting() public {
 
         vm.expectRevert("not arrive voting time.");
@@ -163,7 +109,7 @@ contract CouncilTest is Test {
         assertEq(council.getCampaignPhase(), 2);
 
     }
-
+    // 候選人參選
     function candidateAttending() public {
         vm.startPrank(0xC0ACE560563cc90b6f4E8CEd54f44d1348f7706d);
         council.participate("Paul", "Vote Paul.");
@@ -192,7 +138,7 @@ contract CouncilTest is Test {
     }
 
 
-
+    //新增理事會提案
     function proposeExample() public {
         IProposal proposal = IProposal(setUpInstance.getProposal());
         uintArr.push(2);
@@ -218,7 +164,7 @@ contract CouncilTest is Test {
             addrArr,
             block.timestamp);
     }
-
+    // 初始化資金&質押
     function dealHoldersAndMintTrendToken() public {
         
         for (uint256 i=0; i < holders.length; i++){
@@ -306,7 +252,7 @@ contract CouncilTest is Test {
         assertEq(trendToken.stakedBalanceOf(0xf80b09E4c6c8248313137101E62B5723Dd6C5ce5), 5000);
         vm.stopPrank();
     }
-
+    //項目方更改提案階段為投票階段
     function changeProposalPhaseToVote() public {
         vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
         vm.warp(block.timestamp + 86400 *7);
@@ -314,7 +260,7 @@ contract CouncilTest is Test {
         vm.stopPrank();
         assertEq(proposal.getProposalPhaseIndex(0), 1);
     }
-    
+    //提案投票
     function proposalVoting() public {
         for(uint256 i=0; i< holders.length; i++){
             vm.startPrank(holders[i]);
@@ -322,7 +268,7 @@ contract CouncilTest is Test {
             vm.stopPrank();
         }
     }
-
+    //項目方更改提案狀態為結算階段
     function changeProposalPhaseToConfirming() public {
         vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
         vm.warp(block.timestamp + 86400 *7 *2);
@@ -331,7 +277,7 @@ contract CouncilTest is Test {
 
         assertEq(proposal.getProposalPhaseIndex(0), 2);
     }
-
+    //提案結算
     function propsalConfirming() public {
         vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
         setUpInstance.proposalConfirm(0);
@@ -339,7 +285,7 @@ contract CouncilTest is Test {
 
         assertEq(proposal.getProposalPhaseIndex(0), 3);
     }
-
+    //理事會競選投票
     function campaignVote() public {
         
         vm.startPrank(0xC0ACE560563cc90b6f4E8CEd54f44d1348f7706d);
