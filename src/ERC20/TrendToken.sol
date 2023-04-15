@@ -65,7 +65,6 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
     //address =>  質押資訊
     mapping (address => TokenStakedInfo) public stakeInfoMap;
 
-    
     //質押總數
     uint256 public totalStakedToken;
     
@@ -227,17 +226,26 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
     }
 
     //非質押餘額查看
-    function unstakeBalanceOf() public view returns (uint256) {
+    function unstakeBalanceOf(address _addr) public view returns (uint256) {
         return balanceOf(msg.sender) - stakeInfoMap[msg.sender].totalStaked;
         
     }
 
-    //override轉錢功能
+    //override transfer
     function transfer(address to, uint256 amount) public override returns (bool) {
-        require(amount <= unstakeBalanceOf(), "unstaked tokens are not enough.");
-        (bool success, ) = address(to).call{value: amount}("");
-        return success;
+        require(amount <= unstakeBalanceOf(msg.sender), "unstaked tokens are not enough.");
+        _transfer(address(msg.sender), to, amount);
+        return true;
     }
+
+    //override transferFrom
+     function transferFrom(address from, address to, uint256 amount) public virtual override returns (bool) {
+        require(amount <= unstakeBalanceOf(from), "unstaked tokens are not enough.");
+        address spender = _msgSender();
+        _spendAllowance(from, spender, amount);
+        _transfer(from, to, amount);
+        return true;
+     }
 
      //解除質押，取得質押利息
     function unstakeToken(uint256 _stakedIndex) external nonReentrant stakedToken{
@@ -323,6 +331,5 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
     function stakedBalanceOf(address _addr) external view returns(uint256) {
         return stakeInfoMap[_addr].totalStaked;
     }
-
 
 }  
