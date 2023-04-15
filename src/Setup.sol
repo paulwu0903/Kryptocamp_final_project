@@ -16,6 +16,7 @@ import "./ERC721A/ITrendMasterNFT.sol";
 import "../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 
 contract SetUp is Ownable{
+    event GetProposal(address prposalAddr);
 
     ICouncil public council;
     IProposal public proposal;
@@ -154,7 +155,8 @@ contract SetUp is Ownable{
         return address(council);
     }
 
-    function getProposal () external view returns(address ){
+    function getProposal () external  returns(address ){
+        emit GetProposal(address(proposal));
         return address(proposal);
     }
 }
