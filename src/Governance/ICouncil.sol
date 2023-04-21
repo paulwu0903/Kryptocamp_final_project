@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity >=0.8.17;
+pragma solidity >=0.8.0;
 
 interface ICouncil{
 
@@ -26,5 +26,9 @@ interface ICouncil{
     function campaignVote(uint8 _candidateindex, uint256 _votePower) external;
     function getVotersNum() external view returns(uint256);
     function campaignConfirm() external;
+    function getRecallPhase() external view returns(uint256 phase);
+    function recallVote(uint256 _votePower) external;
+    function recallConfirm() external;
+    function getMembersNum() external view returns (uint256);
     
 }

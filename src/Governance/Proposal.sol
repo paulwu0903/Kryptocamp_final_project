@@ -1,11 +1,11 @@
 //SPDX-License-Identifier: MIT
-pragma solidity >=0.8.17;
+pragma solidity >=0.8.0;
 
 import "./ITreasury.sol";
 import "./ICouncil.sol";
-import "../ERC20/ITrendToken.sol";
+import "../Stake/ITokenStakingRewards.sol";
 import "../ERC721A/ITrendMasterNFT.sol";
-import "../../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 
 contract Proposal is Ownable{
@@ -31,13 +31,13 @@ contract Proposal is Ownable{
         ADJUST_PROPOSAL_VOTE_POWER_TOKEN_THRESHOLD, //設定提案各階段間隔時間
 
         //Treasury
-        ADJUST_TREASURY_CONFIRM_NUM_THRESHOLD, //設定國庫交易確認門檻
+        ADJUST_TREASURY_CONFIRM_NUM_THRESHOLD //設定國庫交易確認門檻
         
         //NFT
-        ADJUST_TREND_MASTER_DAILY_INTEREST, //調整質押Trend Master每日利息
+        //ADJUST_TREND_MASTER_DAILY_INTEREST, //調整質押Trend Master每日利息
         
         //Token
-        ADJUST_TREND_TOKEN_DAILY_INTEREST //調整質押Trend Token每日利息
+        //ADJUST_TREND_TOKEN_DAILY_INTEREST //調整質押Trend Token每日利息
     }
 
     //提案狀態
@@ -94,7 +94,7 @@ contract Proposal is Ownable{
     address private controller;
 
     ITrendMasterNFT trendMasterNFT;
-    ITrendToken trendToken;
+    ITokenStakingRewards tokenStakingRewards;
     ITreasury treasury;
     ICouncil council;
 
@@ -102,30 +102,30 @@ contract Proposal is Ownable{
     mapping (uint256 => mapping (address => bool)) isProposalVote;
 
     constructor(
-        address _trendToken,
+        address _tokenStakingRewards,
         address _trendMasterNFT,
         address _treasury,
         address _council)
         {
         //導入合約介面
-        trendToken = ITrendToken(_trendToken);
+        tokenStakingRewards = ITokenStakingRewards(_tokenStakingRewards);
         trendMasterNFT = ITrendMasterNFT(_trendMasterNFT);
         treasury = ITreasury(_treasury);
         council = ICouncil(_council);
 
         //提案規範初始化
-        proposalRule.tokenNumThreshold = 10000 ;
+        proposalRule.tokenNumThreshold = 10000 ether ;
         proposalRule.votePowerThreshold = 10;
         proposalRule.proposalDurationFromCloseToVote = 86400 seconds;
         proposalRule.proposalDurationFromVoteToConfirm = 86400 * 7 seconds;
 
 
         //初始化取得vote power的token門檻
-        proposalVotePowerThreshold.level1 = 100;
-        proposalVotePowerThreshold.level2 = 3000;
-        proposalVotePowerThreshold.level3 = 10000;
-        proposalVotePowerThreshold.level4 = 100000;
-        proposalVotePowerThreshold.level5 = 1000000;
+        proposalVotePowerThreshold.level1 = 100 ether;
+        proposalVotePowerThreshold.level2 = 3000 ether;
+        proposalVotePowerThreshold.level3 = 10000 ether;
+        proposalVotePowerThreshold.level4 = 100000 ether;
+        proposalVotePowerThreshold.level5 = 1000000 ether;
 
     }
 
@@ -160,7 +160,7 @@ contract Proposal is Ownable{
 
     //提案者資金達標
     modifier isTokenEnoughToPropose{
-        require(trendToken.balanceOf(address(msg.sender)) >= proposalRule.tokenNumThreshold, "trendTokens not enough to propose.");
+        require(tokenStakingRewards.getBalanceOf(address(msg.sender)) >= proposalRule.tokenNumThreshold, "trendTokens not enough to propose.");
         _;
     }
 
@@ -204,9 +204,9 @@ contract Proposal is Ownable{
             _proposalType ==  ProposalType.ADJUST_COUNCIL_CAMPAIGN_PASS_VOTE_POWER_THRESHOLD ||
             _proposalType ==  ProposalType.ADJUST_PROPOSAL_VOTE_POWER_THRESHOLD ||
             _proposalType ==  ProposalType.ADJUST_PROPOSAL_TOKEN_NUM_THRESHOLD ||
-            _proposalType ==  ProposalType.ADJUST_TREASURY_CONFIRM_NUM_THRESHOLD ||
-            _proposalType ==  ProposalType.ADJUST_TREND_MASTER_DAILY_INTEREST ||
-            _proposalType ==  ProposalType.ADJUST_TREND_TOKEN_DAILY_INTEREST){
+            _proposalType ==  ProposalType.ADJUST_TREASURY_CONFIRM_NUM_THRESHOLD //||
+            //_proposalType ==  ProposalType.ADJUST_TREND_MASTER_DAILY_INTEREST ||
+            /*_proposalType ==  ProposalType.ADJUST_TREND_TOKEN_DAILY_INTEREST*/){
             require(_paramsUint.length == 1, "uint array just needs 1 element.");
             require(_paramsAddress.length == 0, "address array is not necessary.");
             _;
@@ -342,7 +342,7 @@ contract Proposal is Ownable{
     //取得Proposal投票力
     function getProposalVotePowerOfUser()public view returns(uint256){
         
-        uint256 balance = trendToken.stakedBalanceOf(msg.sender);
+        uint256 balance = tokenStakingRewards.getBalanceOf(msg.sender);
         uint256 votePower = 0;
 
         if (balance < proposalVotePowerThreshold.level1){
@@ -428,11 +428,11 @@ contract Proposal is Ownable{
             );
         }else if (_proposal.proposalType ==  ProposalType.ADJUST_TREASURY_CONFIRM_NUM_THRESHOLD){
             treasury.setTxRequireConfirmedNum(_proposal.paramsUint[0]);
-        }else if (_proposal.proposalType ==  ProposalType.ADJUST_TREND_MASTER_DAILY_INTEREST){
+        }/*else if (_proposal.proposalType ==  ProposalType.ADJUST_TREND_MASTER_DAILY_INTEREST){
             trendMasterNFT.setInterest( _proposal.paramsUint[0]);
         }else if (_proposal.proposalType ==  ProposalType.ADJUST_TREND_TOKEN_DAILY_INTEREST){
             trendToken.setInterest( _proposal.paramsUint[0]);
-        }
+        }*/
     }    
 
     function getController() external view returns (address){
@@ -468,11 +468,11 @@ contract Proposal is Ownable{
             return ProposalType.ADJUST_PROPOSAL_VOTE_POWER_TOKEN_THRESHOLD;
         }else if(_index == 13 ){
             return ProposalType.ADJUST_TREASURY_CONFIRM_NUM_THRESHOLD;
-        }else if(_index == 14 ){
+        }/*else if(_index == 14 ){
             return ProposalType.ADJUST_TREND_MASTER_DAILY_INTEREST;
         }else if(_index == 15 ){
             return ProposalType.ADJUST_TREND_TOKEN_DAILY_INTEREST;
-        }
+        }*/
     }
     function getProposalPhaseIndex(uint256 _index) external view returns (uint256 phase){
         if(proposals[_index].proposalPhase == ProposalPhase.CLOSED){
@@ -492,5 +492,8 @@ contract Proposal is Ownable{
         return proposals[_proposalIndex].votePowers;
     }
 
+    function getProposalsAmount() external view returns(uint256){
+        return proposals.length;
+    }
     
 }

@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity >=0.8.17;
+pragma solidity >=0.8.0;
 
 
 contract Treasury{
@@ -82,6 +82,7 @@ contract Treasury{
     function removeOwner(address _removeMember) external{
         require(isOwner[_removeMember], "not a member.");
         
+        //TODO: 待優化
         for(uint256 i=0; i< owners.length; i++){
             if (owners[i] == _removeMember ){
                 delete owners[i];

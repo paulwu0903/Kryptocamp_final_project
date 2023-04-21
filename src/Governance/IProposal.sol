@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity >=0.8.0;
 
 
 interface IProposal{
@@ -42,6 +42,7 @@ interface IProposal{
     function proposalConfirm(uint256 _proposalIndex) external;
     function getProposalVotePower(uint256 _proposalIndex) external view returns(uint256);
     function getProposalVotePowerOfUser()external view returns(uint256);
+    function getProposalsAmount() external view returns(uint256);
     
     
 }

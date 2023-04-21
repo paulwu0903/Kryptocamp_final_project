@@ -1,19 +1,27 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.17;
+pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
 import "../src/SetUp.sol";
-import "../src/ERC20/ITrendToken.sol";
-import "../src/Governance/IProposal.sol";
-import "../src/Governance/ITreasury.sol";
+import "../src/ERC20/TrendToken.sol";
+import "../src/Governance/Proposal.sol";
+import "../src/Governance/Treasury.sol";
+import "../src/ERC721A/TrendMasterNFT.sol";
+import "../src/Governance/Council.sol";
+import "../src/Stake/TokenStakingRewards.sol";
+import "../src/Airdrop/TokenAirdrop.sol";
+import "../src/Airdrop/ITokenAirdrop.sol";
 
 contract CouncilTest is Test {
 
-     SetUp public setUpInstance;
     IProposal public proposal;
     ITrendToken public trendToken; 
     ICouncil public council;
     ITreasury public treasury;
+    ITrendMasterNFT public trendMasterNFT;
+    ITokenStakingRewards public tokenStakingRewards;
+    ITokenAirdrop public tokenAirdrop;
+    TokenStakingRewards tokenStakingRewardsInstance;
 
     address[] public owners = [
             0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed,
@@ -22,6 +30,7 @@ contract CouncilTest is Test {
             ];
     
     address[] public holders = [
+        0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed,
         0xC0ACE560563cc90b6f4E8CEd54f44d1348f7706d,
         0x0555187CccE757Aa48259dF9433342B02aF16b6f,
         0xaB084bCF2a30B457D71bDE1894de8014619A221A,
@@ -37,26 +46,60 @@ contract CouncilTest is Test {
 
     address[] public addrArr;
     uint256[] public uintArr;
-
+    
     function setUp() public {
         vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
-        setUpInstance = new SetUp(owners);
-        setUpInstance.tokenDistribute();
-        vm.stopPrank();
+        TrendToken trendTokenInstance = new TrendToken(18);
+        Treasury treasuryInstance = new Treasury(owners);
+        TrendMasterNFT trendMasterNFTInstance = new TrendMasterNFT();
+        tokenStakingRewardsInstance = new TokenStakingRewards(address(trendTokenInstance));
+        TokenAirdrop tokenAirdropInstance = new TokenAirdrop(address(trendTokenInstance));
+        Council councilInstance = new Council(address(tokenStakingRewardsInstance), address(treasuryInstance));
+        Proposal proposalInstance = new Proposal(address(tokenStakingRewardsInstance), address(trendMasterNFTInstance), address(treasuryInstance), address(councilInstance));
+        
 
-        proposal = IProposal(setUpInstance.getProposal());
-        trendToken = ITrendToken(setUpInstance.getTrendToken());
-        council = ICouncil(setUpInstance.getCouncil());
-        treasury = ITreasury(setUpInstance.getTreasury());
+        councilInstance.setController(address(proposalInstance));
+        trendTokenInstance.setController(address(proposalInstance));
+        trendMasterNFTInstance.setController(address(proposalInstance));
+        
+        trendTokenInstance.setDistribution(
+            {
+                _treasuryAddress: address(treasuryInstance),
+                _treasuryAmount: 200000000 ether, 
+                _tokenStakeInterestAddress: address(tokenStakingRewardsInstance),
+                _tokenStakeInterestAmount: 250000000 ether, 
+                _consultantAddress: address(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed), 
+                _consultantAmount: 30000000 ether, 
+                _airdropAddress: address(tokenAirdropInstance),
+                _airdropAmount: 20000000 ether, 
+                _nftStakeInterestAddress: address(trendMasterNFTInstance), 
+                _nftStakeInterestAmount: 300000000 ether, 
+                _publicMintAmount: 200000000 ether
+            });
+        
+        
+        council = ICouncil(address(councilInstance));
+        proposal = IProposal(address(proposalInstance));
+        trendToken = ITrendToken(address(trendTokenInstance));
+        treasury = ITreasury(address(treasuryInstance));
+        trendMasterNFT = ITrendMasterNFT(address(trendMasterNFTInstance));
+
+        trendToken.tokenDistribute();
+
+        tokenStakingRewardsInstance.setRewardsDuration(86400 * 365);
+        tokenStakingRewardsInstance.notifyRewardAmount(250000000 ether);
+
+        vm.stopPrank();
 
     }
 
-
-    function testCampaignConfirming() public {
-        //新增理事會提案
-        proposeExample();
+    
+    function testCampaign() public {
+        
         // 初始化資金&質押
         dealHoldersAndMintTrendToken();
+        //新增理事會提案
+        proposeCampaign();
         //項目方更改提案階段為投票階段
         changeProposalPhaseToVote();
         //提案投票
@@ -75,23 +118,77 @@ contract CouncilTest is Test {
         changeCampaignPhaseToConfirming();
         //理事會競選結算
         campaignConfirm();
-        //檢查國庫owner是否新增
-        assertEq(treasury.getOwner().length, 5);
+        
+    }
+    function testRecall() public {
+        // 初始化資金&質押
+        dealHoldersAndMintTrendToken();
+        //提案罷免
+        proposeRecall();
+        //項目方更改提案階段為投票階段
+        changeProposalPhaseToVote();
+        //提案投票
+        proposalVoting();
+        //項目方更改提案狀態為結算階段
+        changeProposalPhaseToConfirming();
+        //提案結算
+        propsalConfirming();
+        // 項目方更改罷免階段為投票階段
+        changeRecallPhaseToVoting();
+        //罷免投票
+        recallVote();
+        //項目方更改罷免階段為結算階段
+        changeRecallPhaseToConfirming();
+        //罷免理事會結案
+        recallConfirm();
+        
+    }
+    
+    
+    
+
+    //罷免提案
+    function proposeRecall() public {
+        addrArr.push(0xaB084bCF2a30B457D71bDE1894de8014619A221A);
+
+        //持有10000顆Trend Token才可提案
+        vm.prank(0x60d3A1B09a4b26E109c209cd5350c40E11cf22D9);
+        proposal.propose(
+            1,
+            "No.1 Council Recall",
+            "The first council recall.",
+            uintArr,
+            addrArr,
+            block.timestamp
+        );
+        assertEq(proposal.getProposalsAmount(), 1);
+            
+    }
+
+    //理事會罷免結算
+    function recallConfirm() public {
+        vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
+        council.recallConfirm();
+        vm.stopPrank();
+        assertEq(council.getRecallPhase(), 0);
+        assertEq(treasury.getOwner().length, 2);
     }
 
     //理事會競選結算
     function campaignConfirm() public {
         vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
-        setUpInstance.campaignConfirm();
+        council.campaignConfirm();
         vm.stopPrank();
 
-        //assertEq(council.getCampaignPhase(), 0);
+        assertEq(council.getCampaignPhase(), 0);
+        assertEq(treasury.getOwner().length, 5);
     }
+
     // 項目方更改競選階段為結算階段
     function changeCampaignPhaseToConfirming() public {
         vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
         vm.warp(block.timestamp + 86400 *7 *3);
-        setUpInstance.changeCamgaignPhaseToConfirming();
+        council.changeCampaignToConforming();
         vm.stopPrank();
         //assertEq(council.getCampaignPhase(), 3);
     }
@@ -101,14 +198,36 @@ contract CouncilTest is Test {
         vm.expectRevert("not arrive voting time.");
         vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
         vm.warp(block.timestamp + 86400 *7 );
-        setUpInstance.changeCamgaignPhaseToVoting();
+        council.changeCampaignToVoting();
 
         vm.warp(block.timestamp + 86400 *7 *2);
-        setUpInstance.changeCamgaignPhaseToVoting();
+        council.changeCampaignToVoting();
         vm.stopPrank();
         assertEq(council.getCampaignPhase(), 2);
 
     }
+    // 項目方更改罷免階段為投票階段 
+    function changeRecallPhaseToVoting() public {
+
+        vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
+        vm.warp(block.timestamp + 86400 *7 );
+        council.changeRecallToVoting();
+        vm.stopPrank();
+        assertEq(council.getRecallPhase(), 1);
+
+    }
+
+    // 項目方更改罷免階段為結算階段
+    function changeRecallPhaseToConfirming() public {
+
+        vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
+        vm.warp(block.timestamp + 86400 *7 * 2 );
+        council.changeRecallToConfirming();
+        vm.stopPrank();
+        assertEq(council.getRecallPhase(), 2);
+
+    }
+
     // 候選人參選
     function candidateAttending() public {
         vm.startPrank(0xC0ACE560563cc90b6f4E8CEd54f44d1348f7706d);
@@ -121,7 +240,7 @@ contract CouncilTest is Test {
         vm.stopPrank();
         assertEq(council.getCandidateNum(), 2);
 
-        vm.startPrank(0xaB084bCF2a30B457D71bDE1894de8014619A221A);
+        vm.startPrank(0xf80b09E4c6c8248313137101E62B5723Dd6C5ce5);
         council.participate("Steve", "Vote Steve.");
         vm.stopPrank();
         assertEq(council.getCandidateNum(), 3);
@@ -139,21 +258,9 @@ contract CouncilTest is Test {
 
 
     //新增理事會提案
-    function proposeExample() public {
-        IProposal proposal = IProposal(setUpInstance.getProposal());
+    function proposeCampaign() public {
         uintArr.push(2);
         uintArr.push(5);
-
-        //持有10000顆Trend Token才可投票
-        vm.expectRevert("trendTokens not enough to propose.");
-        vm.prank(0xf80b09E4c6c8248313137101E62B5723Dd6C5ce5);
-        proposal.propose(
-            0,
-            "No.1 Council Campaign",
-            "The first council campaign.",
-            uintArr,
-            addrArr,
-            block.timestamp);
 
         vm.prank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
         proposal.propose(
@@ -164,99 +271,116 @@ contract CouncilTest is Test {
             addrArr,
             block.timestamp);
     }
-    // 初始化資金&質押
+    //初始化資金&質押
     function dealHoldersAndMintTrendToken() public {
         
         for (uint256 i=0; i < holders.length; i++){
             vm.deal(holders[i], 100 ether);
         }
+        vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
+        trendToken.approve(address(tokenStakingRewardsInstance), 1000000 ether);
+        tokenStakingRewardsInstance.stake(1000000 ether);
+        assertEq(tokenStakingRewardsInstance.getBalanceOf(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed), 1000000 ether);
+        vm.stopPrank();
         
         //購買Trend Token並投票
         vm.startPrank(0xC0ACE560563cc90b6f4E8CEd54f44d1348f7706d);
-        trendToken.publicMint{value: 100 ether}(1000000);
-        assertEq(trendToken.balanceOf(0xC0ACE560563cc90b6f4E8CEd54f44d1348f7706d), 1000000);
-        trendToken.stakeToken(1000000);
-        assertEq(trendToken.stakedBalanceOf(0xC0ACE560563cc90b6f4E8CEd54f44d1348f7706d), 1000000);
+        trendToken.publicMint{value: 100 ether}(1000000 ether);
+        assertEq(trendToken.balanceOf(0xC0ACE560563cc90b6f4E8CEd54f44d1348f7706d), 1000000 ether);
+        trendToken.approve(address(tokenStakingRewardsInstance), 1000000 ether);
+        tokenStakingRewardsInstance.stake(1000000 ether);
+        assertEq(tokenStakingRewardsInstance.getBalanceOf(0xC0ACE560563cc90b6f4E8CEd54f44d1348f7706d), 1000000 ether);
         vm.stopPrank();
         
         vm.startPrank(0x0555187CccE757Aa48259dF9433342B02aF16b6f);
-        trendToken.publicMint{value: 100 ether}(1000000);
-        assertEq(trendToken.balanceOf(0x0555187CccE757Aa48259dF9433342B02aF16b6f), 1000000);
-        trendToken.stakeToken(1000000);
-        assertEq(trendToken.stakedBalanceOf(0x0555187CccE757Aa48259dF9433342B02aF16b6f), 1000000);
+        trendToken.publicMint{value: 100 ether}(1000000 ether);
+        assertEq(trendToken.balanceOf(0x0555187CccE757Aa48259dF9433342B02aF16b6f), 1000000 ether);
+        trendToken.approve(address(tokenStakingRewardsInstance), 1000000 ether);
+        tokenStakingRewardsInstance.stake(1000000 ether);
+        assertEq(tokenStakingRewardsInstance.getBalanceOf(0x0555187CccE757Aa48259dF9433342B02aF16b6f), 1000000 ether);
         vm.stopPrank();
 
         vm.startPrank(0xaB084bCF2a30B457D71bDE1894de8014619A221A);
-        trendToken.publicMint{value: 1 ether}(100000);
-        assertEq(trendToken.balanceOf(0xaB084bCF2a30B457D71bDE1894de8014619A221A), 100000);
-        trendToken.stakeToken(100000);
-        assertEq(trendToken.stakedBalanceOf(0xaB084bCF2a30B457D71bDE1894de8014619A221A), 100000);
+        trendToken.publicMint{value: 1 ether}(100000 ether);
+        assertEq(trendToken.balanceOf(0xaB084bCF2a30B457D71bDE1894de8014619A221A), 100000 ether);
+        trendToken.approve(address(tokenStakingRewardsInstance), 100000 ether);
+        tokenStakingRewardsInstance.stake(100000 ether);
+        assertEq(tokenStakingRewardsInstance.getBalanceOf(0xaB084bCF2a30B457D71bDE1894de8014619A221A), 100000 ether);
         vm.stopPrank();
 
         vm.startPrank(0x6337c10F0DfcE4f813306f577A04c42132F7dCb2);
-        trendToken.publicMint{value: 1 ether}(5000);
-        assertEq(trendToken.balanceOf(0x6337c10F0DfcE4f813306f577A04c42132F7dCb2), 5000);
-        trendToken.stakeToken(5000);
-        assertEq(trendToken.stakedBalanceOf(0x6337c10F0DfcE4f813306f577A04c42132F7dCb2), 5000);
+        trendToken.publicMint{value: 1 ether}(5000 ether);
+        assertEq(trendToken.balanceOf(0x6337c10F0DfcE4f813306f577A04c42132F7dCb2), 5000 ether);
+        trendToken.approve(address(tokenStakingRewardsInstance), 5000 ether);
+        tokenStakingRewardsInstance.stake(5000 ether);
+        assertEq(tokenStakingRewardsInstance.getBalanceOf(0x6337c10F0DfcE4f813306f577A04c42132F7dCb2), 5000 ether);
         vm.stopPrank();
 
         vm.startPrank(0x5E56672df2929E9EA6427186d1F8dD7c282e61C1);
-        trendToken.publicMint{value: 1 ether}(200);  
-        assertEq(trendToken.balanceOf(0x5E56672df2929E9EA6427186d1F8dD7c282e61C1), 200);
-        trendToken.stakeToken(200);   
-        assertEq(trendToken.stakedBalanceOf(0x5E56672df2929E9EA6427186d1F8dD7c282e61C1), 200);
+        trendToken.publicMint{value: 1 ether}(200 ether);  
+        assertEq(trendToken.balanceOf(0x5E56672df2929E9EA6427186d1F8dD7c282e61C1), 200 ether);
+        trendToken.approve(address(tokenStakingRewardsInstance), 200 ether);
+        tokenStakingRewardsInstance.stake(200 ether);  
+        assertEq(tokenStakingRewardsInstance.getBalanceOf(0x5E56672df2929E9EA6427186d1F8dD7c282e61C1), 200 ether);
         vm.stopPrank();
 
         vm.startPrank(0xD7C20d7178AA5c47C890dF272f449c902731b411);
-        trendToken.publicMint{value: 1 ether}(1000);
-        assertEq(trendToken.balanceOf(0xD7C20d7178AA5c47C890dF272f449c902731b411), 1000);
-        trendToken.stakeToken(1000);
-        assertEq(trendToken.stakedBalanceOf(0xD7C20d7178AA5c47C890dF272f449c902731b411), 1000);
+        trendToken.publicMint{value: 1 ether}(1000 ether);
+        assertEq(trendToken.balanceOf(0xD7C20d7178AA5c47C890dF272f449c902731b411), 1000 ether);
+        trendToken.approve(address(tokenStakingRewardsInstance), 1000 ether);
+        tokenStakingRewardsInstance.stake(1000 ether);
+        assertEq(tokenStakingRewardsInstance.getBalanceOf(0xD7C20d7178AA5c47C890dF272f449c902731b411), 1000 ether);
         vm.stopPrank();
 
         vm.startPrank(0x60d3A1B09a4b26E109c209cd5350c40E11cf22D9);
-        trendToken.publicMint{value: 100 ether}(1000000);
-        assertEq(trendToken.balanceOf(0x60d3A1B09a4b26E109c209cd5350c40E11cf22D9), 1000000);
-        trendToken.stakeToken(1000000);
-        assertEq(trendToken.stakedBalanceOf(0x60d3A1B09a4b26E109c209cd5350c40E11cf22D9), 1000000);
+        trendToken.publicMint{value: 100 ether}(1000000 ether);
+        assertEq(trendToken.balanceOf(0x60d3A1B09a4b26E109c209cd5350c40E11cf22D9), 1000000 ether);
+        trendToken.approve(address(tokenStakingRewardsInstance), 1000000 ether);
+        tokenStakingRewardsInstance.stake(1000000 ether);
+        assertEq(tokenStakingRewardsInstance.getBalanceOf(0x60d3A1B09a4b26E109c209cd5350c40E11cf22D9), 1000000 ether);
         vm.stopPrank();
 
         vm.startPrank(0x54d3b43B7c8482d44b5788C9094c319028e6ee2e);
-        trendToken.publicMint{value: 100 ether}(1000000);
-        assertEq(trendToken.balanceOf(0x54d3b43B7c8482d44b5788C9094c319028e6ee2e), 1000000);
-        trendToken.stakeToken(1000000);
-        assertEq(trendToken.stakedBalanceOf(0x54d3b43B7c8482d44b5788C9094c319028e6ee2e), 1000000);
+        trendToken.publicMint{value: 100 ether}(1000000 ether);
+        assertEq(trendToken.balanceOf(0x54d3b43B7c8482d44b5788C9094c319028e6ee2e), 1000000 ether);
+        trendToken.approve(address(tokenStakingRewardsInstance), 1000000 ether);
+        tokenStakingRewardsInstance.stake(1000000 ether);
+        assertEq(tokenStakingRewardsInstance.getBalanceOf(0x54d3b43B7c8482d44b5788C9094c319028e6ee2e), 1000000 ether);
         vm.stopPrank();
 
         vm.startPrank(0xE7918DBc151Bf711d7E2DFe8d19F686B2938A7AF);
-        trendToken.publicMint{value: 1 ether}(400);
-        assertEq(trendToken.balanceOf(0xE7918DBc151Bf711d7E2DFe8d19F686B2938A7AF), 400);
-        trendToken.stakeToken(400);
-        assertEq(trendToken.stakedBalanceOf(0xE7918DBc151Bf711d7E2DFe8d19F686B2938A7AF), 400);
+        trendToken.publicMint{value: 1 ether}(400 ether);
+        assertEq(trendToken.balanceOf(0xE7918DBc151Bf711d7E2DFe8d19F686B2938A7AF), 400 ether);
+        trendToken.approve(address(tokenStakingRewardsInstance), 400 ether);
+        tokenStakingRewardsInstance.stake(400 ether);
+        assertEq(tokenStakingRewardsInstance.getBalanceOf(0xE7918DBc151Bf711d7E2DFe8d19F686B2938A7AF), 400 ether);
         vm.stopPrank();
 
         vm.startPrank(0x3093E7b4E269d68Db272399754c06abA62a4F97c);
-        trendToken.publicMint{value: 1 ether}(4000);
-        assertEq(trendToken.balanceOf(0x3093E7b4E269d68Db272399754c06abA62a4F97c), 4000);
-        trendToken.stakeToken(4000);
-        assertEq(trendToken.stakedBalanceOf(0x3093E7b4E269d68Db272399754c06abA62a4F97c), 4000);
+        trendToken.publicMint{value: 1 ether}(4000 ether);
+        assertEq(trendToken.balanceOf(0x3093E7b4E269d68Db272399754c06abA62a4F97c), 4000 ether);
+        trendToken.approve(address(tokenStakingRewardsInstance), 4000 ether);
+        tokenStakingRewardsInstance.stake(4000 ether);
+        assertEq(tokenStakingRewardsInstance.getBalanceOf(0x3093E7b4E269d68Db272399754c06abA62a4F97c), 4000 ether);
         vm.stopPrank();
 
         vm.expectRevert("ETH not enough!!");
         vm.startPrank(0xf80b09E4c6c8248313137101E62B5723Dd6C5ce5);
-        trendToken.publicMint{value: 1 ether}(5000000000);
+        trendToken.publicMint{value: 1 ether}(5000000000 ether);
     
-        trendToken.publicMint{value: 1 ether}(5000);
-        assertEq(trendToken.balanceOf(0xf80b09E4c6c8248313137101E62B5723Dd6C5ce5), 5000);
-        trendToken.stakeToken(5000);
-        assertEq(trendToken.stakedBalanceOf(0xf80b09E4c6c8248313137101E62B5723Dd6C5ce5), 5000);
+        trendToken.publicMint{value: 10 ether}(100000 ether);
+        assertEq(trendToken.balanceOf(0xf80b09E4c6c8248313137101E62B5723Dd6C5ce5), 100000 ether);
+        trendToken.approve(address(tokenStakingRewardsInstance), 100000 ether);
+        tokenStakingRewardsInstance.stake(100000 ether);
+        assertEq(tokenStakingRewardsInstance.getBalanceOf(0xf80b09E4c6c8248313137101E62B5723Dd6C5ce5), 100000 ether);
         vm.stopPrank();
+        
     }
     //項目方更改提案階段為投票階段
     function changeProposalPhaseToVote() public {
         vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
         vm.warp(block.timestamp + 86400 *7);
-        setUpInstance.changeProposalPhaseToVoting(0);
+        proposal.changeProposalPhaseToVoting(0);
         vm.stopPrank();
         assertEq(proposal.getProposalPhaseIndex(0), 1);
     }
@@ -272,7 +396,7 @@ contract CouncilTest is Test {
     function changeProposalPhaseToConfirming() public {
         vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
         vm.warp(block.timestamp + 86400 *7 *2);
-        setUpInstance.changeProposalPhaseTocConfirming(0);
+        proposal.changeProposalPhaseToConfirming(0);
         vm.stopPrank();
 
         assertEq(proposal.getProposalPhaseIndex(0), 2);
@@ -280,11 +404,12 @@ contract CouncilTest is Test {
     //提案結算
     function propsalConfirming() public {
         vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
-        setUpInstance.proposalConfirm(0);
+        proposal.proposalConfirm(0);
         vm.stopPrank();
 
         assertEq(proposal.getProposalPhaseIndex(0), 3);
     }
+
     //理事會競選投票
     function campaignVote() public {
         
@@ -341,6 +466,65 @@ contract CouncilTest is Test {
 
         vm.startPrank(0xf80b09E4c6c8248313137101E62B5723Dd6C5ce5);
         council.campaignVote(0, council.getRemainVotePower(0xf80b09E4c6c8248313137101E62B5723Dd6C5ce5));
+        console.log("0xf80b09E4c6c8248313137101E62B5723Dd6C5ce5: ",council.getRemainVotePower(0xf80b09E4c6c8248313137101E62B5723Dd6C5ce5) );
+        vm.stopPrank();
+    }
+    //理事會罷免投票
+    function recallVote() public {
+        
+        vm.startPrank(0xC0ACE560563cc90b6f4E8CEd54f44d1348f7706d);
+        council.recallVote(council.getRemainVotePower(0xC0ACE560563cc90b6f4E8CEd54f44d1348f7706d));
+        console.log("0xC0ACE560563cc90b6f4E8CEd54f44d1348f7706d: ",council.getRemainVotePower(0xC0ACE560563cc90b6f4E8CEd54f44d1348f7706d) );
+        vm.stopPrank();
+
+        vm.startPrank(0x0555187CccE757Aa48259dF9433342B02aF16b6f);
+        council.recallVote( council.getRemainVotePower(0x0555187CccE757Aa48259dF9433342B02aF16b6f));
+        console.log("0x0555187CccE757Aa48259dF9433342B02aF16b6f: ",council.getRemainVotePower(0x0555187CccE757Aa48259dF9433342B02aF16b6f) );       
+        vm.stopPrank();
+
+        vm.startPrank(0xaB084bCF2a30B457D71bDE1894de8014619A221A);
+        council.recallVote(council.getRemainVotePower(0xaB084bCF2a30B457D71bDE1894de8014619A221A));
+        console.log("0xaB084bCF2a30B457D71bDE1894de8014619A221A: ",council.getRemainVotePower(0xaB084bCF2a30B457D71bDE1894de8014619A221A) );
+        vm.stopPrank();
+
+        vm.startPrank(0x6337c10F0DfcE4f813306f577A04c42132F7dCb2);
+        council.recallVote(council.getRemainVotePower(0x6337c10F0DfcE4f813306f577A04c42132F7dCb2));
+        console.log("0x6337c10F0DfcE4f813306f577A04c42132F7dCb2: ",council.getRemainVotePower(0x6337c10F0DfcE4f813306f577A04c42132F7dCb2) );
+        vm.stopPrank();
+
+        vm.startPrank(0x5E56672df2929E9EA6427186d1F8dD7c282e61C1);
+        council.recallVote(council.getRemainVotePower(0x5E56672df2929E9EA6427186d1F8dD7c282e61C1));
+        console.log("0x5E56672df2929E9EA6427186d1F8dD7c282e61C1: ",council.getRemainVotePower(0x5E56672df2929E9EA6427186d1F8dD7c282e61C1) );
+        vm.stopPrank();
+
+        vm.startPrank(0xD7C20d7178AA5c47C890dF272f449c902731b411);
+        council.recallVote(council.getRemainVotePower(0xD7C20d7178AA5c47C890dF272f449c902731b411));
+        console.log("0xD7C20d7178AA5c47C890dF272f449c902731b411: ",council.getRemainVotePower(0xD7C20d7178AA5c47C890dF272f449c902731b411) );
+        vm.stopPrank();
+
+
+        vm.startPrank(0x60d3A1B09a4b26E109c209cd5350c40E11cf22D9);
+        council.recallVote(council.getRemainVotePower(0x60d3A1B09a4b26E109c209cd5350c40E11cf22D9));
+        console.log("0x60d3A1B09a4b26E109c209cd5350c40E11cf22D9: ",council.getRemainVotePower(0x60d3A1B09a4b26E109c209cd5350c40E11cf22D9) );
+        vm.stopPrank();
+
+        vm.startPrank(0x54d3b43B7c8482d44b5788C9094c319028e6ee2e);
+        council.recallVote(council.getRemainVotePower(0x54d3b43B7c8482d44b5788C9094c319028e6ee2e));
+        console.log("0x54d3b43B7c8482d44b5788C9094c319028e6ee2e: ",council.getRemainVotePower(0x54d3b43B7c8482d44b5788C9094c319028e6ee2e) );
+        vm.stopPrank();
+
+        vm.startPrank(0xE7918DBc151Bf711d7E2DFe8d19F686B2938A7AF);
+        council.recallVote(council.getRemainVotePower(0xE7918DBc151Bf711d7E2DFe8d19F686B2938A7AF));
+        console.log("0xE7918DBc151Bf711d7E2DFe8d19F686B2938A7AF: ",council.getRemainVotePower(0xE7918DBc151Bf711d7E2DFe8d19F686B2938A7AF) );
+        vm.stopPrank();
+
+        vm.startPrank(0x3093E7b4E269d68Db272399754c06abA62a4F97c);
+        council.recallVote(council.getRemainVotePower(0x3093E7b4E269d68Db272399754c06abA62a4F97c));
+        console.log("0x3093E7b4E269d68Db272399754c06abA62a4F97c: ",council.getRemainVotePower(0x3093E7b4E269d68Db272399754c06abA62a4F97c) );
+        vm.stopPrank();
+
+        vm.startPrank(0xf80b09E4c6c8248313137101E62B5723Dd6C5ce5);
+        council.recallVote( council.getRemainVotePower(0xf80b09E4c6c8248313137101E62B5723Dd6C5ce5));
         console.log("0xf80b09E4c6c8248313137101E62B5723Dd6C5ce5: ",council.getRemainVotePower(0xf80b09E4c6c8248313137101E62B5723Dd6C5ce5) );
         vm.stopPrank();
     }

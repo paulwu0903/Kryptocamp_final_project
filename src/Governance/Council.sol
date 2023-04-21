@@ -1,9 +1,9 @@
 //SPDX-License-Identifier: MIT
-pragma solidity >=0.8.17;
+pragma solidity >=0.8.0;
 
-import "../ERC20/ITrendToken.sol";
+import "../Stake/ITokenStakingRewards.sol";
 import "./ITreasury.sol";
-import "../../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 
 contract Council is Ownable{
@@ -99,11 +99,11 @@ contract Council is Ownable{
 
     //結算名單
     Candidate[] private confirms;
-    //TrendToken interface
-    ITrendToken trendToken;
+    
 
     //Treasury interface
     ITreasury treasury;
+    ITokenStakingRewards tokenStakingRewards;
 
     //控制合約
     address private controller;
@@ -176,10 +176,12 @@ contract Council is Ownable{
         _;
     }
 
-    constructor (address _trendTokenAddress, address _treasuryAddress){
+    constructor (address _tokenStakingRewards, address _treasuryAddress){
         //載入國庫合約
-        trendToken = ITrendToken(_trendTokenAddress);
         treasury = ITreasury(_treasuryAddress);
+
+        //載入質押合約
+        tokenStakingRewards = ITokenStakingRewards(_tokenStakingRewards);
 
         //初始化競選參數
         initCampaign();
@@ -189,9 +191,9 @@ contract Council is Ownable{
 
         //初始化理事會規範
         rule.memberNumLimit = 10;
-        rule.tokenNumThreshold= 10000;
-        rule.passVoteNumThreshold= 10; //tmp
-        rule.votePowerThreshold= 20; //tmp
+        rule.tokenNumThreshold= 10000 ether;
+        rule.passVoteNumThreshold= 10 ; 
+        rule.votePowerThreshold= 20 ; 
         rule.campaignDurationFromCloseToAttend = 86400 seconds;
         rule.campaignDurationFromAttendToVote = 86400 * 7 seconds;
         rule.campaignDurationFromVoteToConfirm = 86400 * 7 seconds;
@@ -199,11 +201,27 @@ contract Council is Ownable{
         rule.recallDurationFromVoteToConfirm = 86400 * 7 seconds;
 
         //初始化取得vote power的token門檻
-        votePowerTokenThreshold.level1 = 100;
-        votePowerTokenThreshold.level2 = 3000;
-        votePowerTokenThreshold.level3 = 10000;
-        votePowerTokenThreshold.level4 = 100000;
-        votePowerTokenThreshold.level5 = 1000000;
+        votePowerTokenThreshold.level1 = 100 ether;
+        votePowerTokenThreshold.level2 = 3000 ether;
+        votePowerTokenThreshold.level3 = 10000 ether;
+        votePowerTokenThreshold.level4 = 100000 ether;
+        votePowerTokenThreshold.level5 = 1000000 ether;
+
+        //新增項目方至理事會
+        address[] memory treasuryOwners = treasury.getOwner();
+        for(uint256 i=0; i< treasuryOwners.length; i++){
+            members.push(
+                Member({
+                    memberAddress: treasuryOwners[i],
+                    name: "admin",
+                    politicalBriefing: "",
+                    receivedVotePowers: 0,
+                    timestamp: block.timestamp
+                })
+            );
+            isMemberMap[ treasuryOwners[i]] = true;
+        }
+        
     }
 
     //設定控制者
@@ -252,7 +270,7 @@ contract Council is Ownable{
         recallActivity.recallAddress = address(0);
         recallActivity.recallPhase = RecallPhase.CLOSED;
         recallActivity.votePowers = 0;
-        recallActivity.startTime = type(uint256).max;
+        recallActivity.startTime = 0;
     }
 
     //設定競選相關時間
@@ -318,8 +336,9 @@ contract Council is Ownable{
     //建立罷免活動
     function createRecall(address _recallCandidate) external onlyController isRecallClosed{
         require(campaign.campaignPhase == CampaignPhase.CLOSED, "Campaign is active.");
-        require(recallActivity.recallAddress != address(0), "address can not be zero-address.");
-        recallActivity.recallPhase = RecallPhase.VOTING;
+        require(_recallCandidate != address(0), "address can not be zero-address.");
+        //recallActivity.recallPhase = RecallPhase.VOTING;
+        recallActivity.startTime = block.timestamp;
         recallActivity.recallAddress = _recallCandidate;
         recallActivity.votePowers = 0;
     }
@@ -354,6 +373,7 @@ contract Council is Ownable{
         campaign.campaignPhase = CampaignPhase.CONFIRMING;
 
         //清掉投票暫存
+        //TODO: 待優化
         uint256 i = voters.length-1;
         while(i <= voters.length-1){
             delete isVote[voters[i]];
@@ -379,18 +399,24 @@ contract Council is Ownable{
         recallActivity.recallPhase = RecallPhase.CONFIRMING;
 
         //清掉投票暫存
-        for (uint256 i=voters.length-1; i >= 0; i--){
+        //TODO: 待優化
+        uint256 i = voters.length-1;
+        while(i <= voters.length-1){
             delete isVote[voters[i]];
             delete votePowerMap[voters[i]];
             delete voters[i];
             voters.pop();
+            if (i == 0) {
+                break;
+            }
+            i--;
         }
     }
 
     //參加競選
     function participate(string memory _name, string memory _politicalBriefing) external isCampaignCandidateAttending notCouncilMember{
         //檢查參選者幣量是否大於規定數量
-        require(trendToken.balanceOf(msg.sender) >= rule.tokenNumThreshold, "TrendToken not enough!");
+        require(tokenStakingRewards.getBalanceOf(msg.sender) >= rule.tokenNumThreshold, "TrendToken not enough!");
         //是否超出候選人上限
         require((candidates.length +1) <= campaign.candidateNum, "Candidates arrives max number.");
         //是否已為理事會
@@ -442,7 +468,7 @@ contract Council is Ownable{
     function getRemainVotePower(address _addr) public returns(uint256){
 
         if (votePowerMap[_addr] == 0){
-            uint256 balance = trendToken.stakedBalanceOf(_addr);
+            uint256 balance = tokenStakingRewards.getBalanceOf(_addr);
             uint256 votePower = 0;
 
             if (balance < votePowerTokenThreshold.level1){
@@ -476,16 +502,16 @@ contract Council is Ownable{
         }else{
             //從理事會中剔除，並移除國庫owner名單
             treasury.removeOwner(recallActivity.recallAddress);
-
+            
+            //TODO: 待優化
             for (uint256 i =0; i < members.length; i++){
                 if (members[i].memberAddress == recallActivity.recallAddress){
-                    isMemberMap[recallActivity.recallAddress] = false;
-                    for (uint256 j = i; j < members.length - 1; i++){
-                        members[i] = members[i + 1];
-                    }
                     delete members[i];
+                    isMemberMap[recallActivity.recallAddress] = false;
+                    for (uint256 j = i; j < members.length - 1; j++){
+                        members[j] = members[j + 1];
+                    }
                     members.pop();
-
                     break;
                 }
             }
@@ -570,16 +596,6 @@ contract Council is Ownable{
             }
             i--;
         }
-
-	    /*for(uint256 i=confirms.length-1; i> 0; i--){
-		    for(uint256 j= confirms.length-1; j< confirms.length-1-i; j--){
-			    if (confirms[j].receivedVotePowers > confirms[j-1].receivedVotePowers){
-				    Candidate memory confirmTmp = candidates[j];
-				    confirms[j] = confirms[j-1];
-				    confirms[j-1] = confirmTmp;
-			    }
-		    }
-	    }*/
     }   
     // copy candidates到comfirms
     //TODO:確認這種複製方式，會不會影響candidates
@@ -603,6 +619,16 @@ contract Council is Ownable{
         }
     }
 
+    function getRecallPhase() external view returns(uint256 phase){
+        if (recallActivity.recallPhase == RecallPhase.CLOSED){
+            phase = 0;
+        }else if (recallActivity.recallPhase == RecallPhase.VOTING){
+            phase = 1;
+        }else if (recallActivity.recallPhase == RecallPhase.CONFIRMING){
+            phase = 2;
+        }
+    }
+
     function getCampaignStartTime() external view returns(uint256 time){
         return campaign.startTime;
     }
@@ -613,6 +639,10 @@ contract Council is Ownable{
 
     function getVotersNum() external view returns(uint256){
         return voters.length;
+    }
+
+    function getMembersNum() external view returns (uint256){
+        return members.length;
     }
 
 }
