@@ -1,13 +1,13 @@
 //SPDX-License-Identifier: MIT
-pragma solidity >=0.8.17;
+pragma solidity >=0.8.0;
 
-import "../../lib/erc721a/contracts/ERC721A.sol";
-import "../../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
-import "../../lib/openzeppelin-contracts/contracts/utils/cryptography/MerkleProof.sol";
-import "../../lib/openzeppelin-contracts/contracts/utils/Strings.sol";
+import "erc721a/contracts/ERC721A.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
-import "../../lib/openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
-import "../ERC20/ITrendToken.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+//import "../ERC20/ITrendToken.sol";
 
 contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
 
@@ -15,36 +15,8 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
 
     //控制合約
     address private controller;
-    //利息
-    uint256 public dailyInterest;
 
     //TODO: 白名單地址要設定哪些來測試
-
-    enum StakeState{
-        STAKED, UNSTAKED
-    }
-
-    //質押資訊
-    struct NFTStakedInfo{
-        StakeState stakeState;
-        uint256 startTime;
-        uint256 stakedInterest;
-    }
-
-    //歷史質押總數（每日新增）
-    struct TotalStakedNFTHistory{
-        uint256 startTime;
-        uint256[] dailyTotalStakedNFT;
-    }
-
-     //質押總數歷史
-    TotalStakedNFTHistory public totalStakedNFTHistory;
-
-    // address => tokenId => 質押資訊
-    mapping (address => mapping(uint256 => NFTStakedInfo)) public nftStakedInfoMap;
-
-    //質押總數
-    uint256 public totalStakedNFT;
 
     //荷蘭拍參數定義
     struct Auction{
@@ -72,12 +44,10 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
     WhitelistMintParam public whitelistMintParam; //白名單相關參數
     Auction public auction; //荷蘭拍參數
     uint256 private maxSupply; //最大NFTs供給量
-    
-    uint8 openBlindPhase = 0;
 
     uint256 contractCreateTime;
 
-    ITrendToken public trendToken;
+    uint8 openBlindPhase = 0;
 
     //檢查是否超出最大供給量
     modifier checkOverMaxSupply(uint256 _quentity){
@@ -91,16 +61,12 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
         _;
     }
 
-    constructor (address _trendTokenAddress) ERC721A ("TrendMaster", "TM"){
+    constructor () ERC721A ("TrendMaster", "TM"){
         contractCreateTime = block.timestamp;
         whitelistMintParam.whitelistMintPrice = 50000000000000000; // 白名單售價0.05E
         maxSupply = 1000; //最大供給量
         isOpen = [false, false, false]; //分三批開盲
         openNum = [500, 300,200];
-
-        dailyInterest = 200000;
-
-        trendToken = ITrendToken(_trendTokenAddress);
     }
 
 
@@ -108,11 +74,6 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
     function setController(address _controllerAddress) external onlyOwner{
         controller = _controllerAddress;
     } 
-
-    //設定利息
-    function setInterest(uint256 _interest) external onlyController{
-        dailyInterest = _interest;
-    }
     
     //設定白名單Merkle Tree樹根
     function setWhitelistMerkleTree(bytes32 _root) external onlyOwner{
@@ -235,60 +196,6 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
 
         //若多支付，則退還給用戶
         remainRefund(( _quantity * getAuctionPrice()), msg.value);
-    }
-    
-    //質押
-    function stakeNFT(uint256 _tokenId) external ownNFT(_tokenId){
-        require(nftStakedInfoMap[msg.sender][_tokenId].stakeState == StakeState.UNSTAKED, "Already STAKED.");
-        
-        nftStakedInfoMap[msg.sender][_tokenId].stakeState = StakeState.STAKED;
-        nftStakedInfoMap[msg.sender][_tokenId].startTime = block.timestamp;
-
-        totalStakedNFT += 1;
-
-    }
-
-    //解除質押
-    function unstakeNFT(uint256 _tokenId) external ownNFT(_tokenId){
-        require( nftStakedInfoMap[msg.sender][_tokenId].stakeState == StakeState.STAKED, "Already UNSTAKED.");
-        nftStakedInfoMap[msg.sender][_tokenId].stakeState = StakeState.UNSTAKED;
-
-        uint256 currentInterest = calculateInterest(_tokenId);
-        nftStakedInfoMap[msg.sender][_tokenId].stakedInterest += currentInterest;
-
-        //用戶可以動用這筆利息的錢
-        trendToken.transferFrom(address(this), address(msg.sender), currentInterest);
-    } 
-
-    //覆寫轉移方法
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId) 
-    public 
-    payable 
-    override 
-    {
-        require( nftStakedInfoMap[msg.sender][tokenId].stakeState == StakeState.UNSTAKED, "NFT is STAKED.");
-        safeTransferFrom(from, to, tokenId, '');
-    }
-
-    //每日更新歷史總幣量（給前端定期呼叫）
-    function updateTotalStakedTokenHistory() external onlyOwner{
-        totalStakedNFTHistory.dailyTotalStakedNFT.push(totalStakedNFT);
-    }
-
-    //取得分多少利息
-    function calculateInterest(uint256 _tokenId) public  view returns (uint256){
-
-        uint256 startIndex = ((nftStakedInfoMap[msg.sender][_tokenId].startTime - totalStakedNFTHistory.startTime) / 86400) + 1;
-        uint256 totalReward = 0;
-        
-        for(uint256 i=startIndex ; i< totalStakedNFTHistory.dailyTotalStakedNFT.length; i++){
-            totalReward += (dailyInterest / totalStakedNFTHistory.dailyTotalStakedNFT[i]);
-        }
-
-        return totalReward;
     }
 
     function getController() external view returns (address){

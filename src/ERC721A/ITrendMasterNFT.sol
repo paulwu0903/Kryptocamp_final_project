@@ -1,13 +1,9 @@
 //SPDX-License-Identifier: MIT
-pragma solidity >=0.8.17;
+pragma solidity >=0.8.0;
 
-interface ITrendMasterNFT{
-    function setInterest (uint256) external;
-    function setWhitelistMerkleTree(bytes32 _root) external;
-    function setWhielistlimit(uint8 _amount) external;
-    function setAuction(uint256 _startPrice, uint256 _endPrice, uint256 _priceStep, uint256 _startTime, uint256 _timeStep, uint256 _timeStepNum) external;
-    function openBlindbox() external;
+import "erc721a/contracts/IERC721A.sol";
+
+interface ITrendMasterNFT is IERC721A{
+    //設定控制者
     function setController(address _controllerAddress) external;
-    function getController() external view returns (address);
-
 }
