@@ -99,15 +99,15 @@ contract CouncilTest is Test {
         // 初始化資金&質押
         dealHoldersAndMintTrendToken();
         //新增理事會提案
-        proposeCampaign();
+        proposeCampaign(0);
         //項目方更改提案階段為投票階段
-        changeProposalPhaseToVote();
+        changeProposalPhaseToVote(0);
         //提案投票
-        proposalVoting();
+        proposalVoting(0);
         //項目方更改提案狀態為結算階段
-        changeProposalPhaseToConfirming();
+        changeProposalPhaseToConfirming(0);
         //提案結算
-        propsalConfirming();
+        propsalConfirming(0);
         // 候選人參選
         candidateAttending();
         // 項目方更改競選階段為投票階段
@@ -117,22 +117,22 @@ contract CouncilTest is Test {
         // 項目方更改競選階段為結算階段
         changeCampaignPhaseToConfirming();
         //理事會競選結算
-        campaignConfirm();
+        campaignConfirm(5);
         
     }
     function testRecall() public {
         // 初始化資金&質押
         dealHoldersAndMintTrendToken();
         //提案罷免
-        proposeRecall();
+        proposeRecall(1,1);
         //項目方更改提案階段為投票階段
-        changeProposalPhaseToVote();
+        changeProposalPhaseToVote(0);
         //提案投票
-        proposalVoting();
+        proposalVoting(0);
         //項目方更改提案狀態為結算階段
-        changeProposalPhaseToConfirming();
+        changeProposalPhaseToConfirming(0);
         //提案結算
-        propsalConfirming();
+        propsalConfirming(0);
         // 項目方更改罷免階段為投票階段
         changeRecallPhaseToVoting();
         //罷免投票
@@ -140,48 +140,93 @@ contract CouncilTest is Test {
         //項目方更改罷免階段為結算階段
         changeRecallPhaseToConfirming();
         //罷免理事會結案
-        recallConfirm();
-        
+        recallConfirm(2); 
+    }
+    
+    function testCampaignAndRecall() public {
+        // 初始化資金&質押
+        dealHoldersAndMintTrendToken();
+        //新增理事會提案
+        proposeCampaign(0);
+        //項目方更改提案階段為投票階段
+        changeProposalPhaseToVote(0);
+        //提案投票
+        proposalVoting(0);
+        //項目方更改提案狀態為結算階段
+        changeProposalPhaseToConfirming(0);
+        //提案結算
+        propsalConfirming(0);
+        // 候選人參選
+        candidateAttending();
+        // 項目方更改競選階段為投票階段
+        changeCampaignPhaseToVoting();
+        //理事會競選投票
+        campaignVote();
+        // 項目方更改競選階段為結算階段
+        changeCampaignPhaseToConfirming();
+        //理事會競選結算
+        campaignConfirm(5);
+
+        //提案罷免
+        proposeRecall(1, 2);
+        //項目方更改提案階段為投票階段
+        changeProposalPhaseToVote(1);
+        //提案投票
+        proposalVoting(1);
+        //項目方更改提案狀態為結算階段
+        changeProposalPhaseToConfirming(1);
+        //提案結算
+        propsalConfirming(1);
+        // 項目方更改罷免階段為投票階段
+        changeRecallPhaseToVoting();
+        //罷免投票
+        recallVote();
+        //項目方更改罷免階段為結算階段
+        changeRecallPhaseToConfirming();
+        //罷免理事會結案
+        recallConfirm(4); 
     }
     
     
     
 
     //罷免提案
-    function proposeRecall() public {
+    function proposeRecall(uint256 _index, uint256 _proposalAmount) public {
+        clearArray();
+        console.log("Length: ", uintArr.length);
         addrArr.push(0xaB084bCF2a30B457D71bDE1894de8014619A221A);
 
         //持有10000顆Trend Token才可提案
         vm.prank(0x60d3A1B09a4b26E109c209cd5350c40E11cf22D9);
         proposal.propose(
-            1,
+            _index,
             "No.1 Council Recall",
             "The first council recall.",
             uintArr,
             addrArr,
             block.timestamp
         );
-        assertEq(proposal.getProposalsAmount(), 1);
+        assertEq(proposal.getProposalsAmount(), _proposalAmount);
             
     }
 
     //理事會罷免結算
-    function recallConfirm() public {
+    function recallConfirm(uint256 _ownerNum) public {
         vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
         council.recallConfirm();
         vm.stopPrank();
         assertEq(council.getRecallPhase(), 0);
-        assertEq(treasury.getOwner().length, 2);
+        assertEq(treasury.getOwner().length, _ownerNum);
     }
 
     //理事會競選結算
-    function campaignConfirm() public {
+    function campaignConfirm(uint256 _ownerNum) public {
         vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
         council.campaignConfirm();
         vm.stopPrank();
 
         assertEq(council.getCampaignPhase(), 0);
-        assertEq(treasury.getOwner().length, 5);
+        assertEq(treasury.getOwner().length, _ownerNum);
     }
 
     // 項目方更改競選階段為結算階段
@@ -258,13 +303,14 @@ contract CouncilTest is Test {
 
 
     //新增理事會提案
-    function proposeCampaign() public {
+    function proposeCampaign(uint256 _index) public {
+        clearArray();
         uintArr.push(2);
         uintArr.push(5);
 
         vm.prank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
         proposal.propose(
-            0,
+            _index,
             "No.1 Council Campaign",
             "The first council campaign.",
             uintArr,
@@ -377,34 +423,34 @@ contract CouncilTest is Test {
         
     }
     //項目方更改提案階段為投票階段
-    function changeProposalPhaseToVote() public {
+    function changeProposalPhaseToVote(uint256 _index) public {
         vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
         vm.warp(block.timestamp + 86400 *7);
-        proposal.changeProposalPhaseToVoting(0);
+        proposal.changeProposalPhaseToVoting(_index);
         vm.stopPrank();
-        assertEq(proposal.getProposalPhaseIndex(0), 1);
+        assertEq(proposal.getProposalPhaseIndex(_index), 1);
     }
     //提案投票
-    function proposalVoting() public {
+    function proposalVoting(uint256 _index) public {
         for(uint256 i=0; i< holders.length; i++){
             vm.startPrank(holders[i]);
-            proposal.proposalVote(0);
+            proposal.proposalVote(_index);
             vm.stopPrank();
         }
     }
     //項目方更改提案狀態為結算階段
-    function changeProposalPhaseToConfirming() public {
+    function changeProposalPhaseToConfirming(uint256 _index) public {
         vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
         vm.warp(block.timestamp + 86400 *7 *2);
-        proposal.changeProposalPhaseToConfirming(0);
+        proposal.changeProposalPhaseToConfirming(_index);
         vm.stopPrank();
 
-        assertEq(proposal.getProposalPhaseIndex(0), 2);
+        assertEq(proposal.getProposalPhaseIndex(_index), 2);
     }
     //提案結算
-    function propsalConfirming() public {
+    function propsalConfirming(uint256 _index) public {
         vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
-        proposal.proposalConfirm(0);
+        proposal.proposalConfirm(_index);
         vm.stopPrank();
 
         assertEq(proposal.getProposalPhaseIndex(0), 3);
@@ -527,5 +573,37 @@ contract CouncilTest is Test {
         council.recallVote( council.getRemainVotePower(0xf80b09E4c6c8248313137101E62B5723Dd6C5ce5));
         console.log("0xf80b09E4c6c8248313137101E62B5723Dd6C5ce5: ",council.getRemainVotePower(0xf80b09E4c6c8248313137101E62B5723Dd6C5ce5) );
         vm.stopPrank();
+    }
+
+    function clearArray() private {
+
+        if (uintArr.length > 0){
+            uint256 i = uintArr.length-1;
+            while(i >= 0){
+                delete uintArr[i];
+                uintArr.pop();
+                if (i == 0 ){
+                    break;
+                }
+                i--;
+            }
+        }
+        
+        if (addrArr.length >0){
+            uint256 j = addrArr.length-1;
+            while(j >= 0){
+                delete addrArr[j];
+                addrArr.pop();
+                if (j == 0 ){
+                    break;
+                }
+                j--;
+            }
+        }
+
+        console.log("uintArr length: ", uintArr.length);
+        console.log("addrArr length: ", addrArr.length);
+
+        
     }
 }
