@@ -6,4 +6,6 @@ import "erc721a/contracts/IERC721A.sol";
 interface ITrendMasterNFT is IERC721A{
     //設定控制者
     function setController(address _controllerAddress) external;
+    function transferBalanceToTreasury(address _treasuryAddress) external;
+    function totalSupply() external view override returns (uint256);
 }

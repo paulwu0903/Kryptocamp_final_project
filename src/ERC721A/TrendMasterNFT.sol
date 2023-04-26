@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-//import "../ERC20/ITrendToken.sol";
+import "../Governance/IMasterTreasury.sol";
 
 contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
 
@@ -200,6 +200,12 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
 
     function getController() external view returns (address){
         return controller;
+    }
+
+    function transferBalanceToTreasury(address _treasuryAddress) external onlyOwner{
+        IMasterTreasury masterTreasury = IMasterTreasury(_treasuryAddress);
+        masterTreasury.addBalance(address(this).balance);
+       payable(_treasuryAddress).transfer(address(this).balance);
     }
 
 
