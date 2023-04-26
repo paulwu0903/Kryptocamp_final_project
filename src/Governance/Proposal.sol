@@ -214,7 +214,7 @@ contract Proposal is Ownable{
             _proposalType ==  ProposalType.ADJUST_COUNCIL_VOTE_POWER_TOKEN_THRESHOLD ||
             _proposalType ==  ProposalType.ADJUST_PROPOSAL_VOTE_POWER_TOKEN_THRESHOLD
         ){
-            require(_paramsUint.length == 1, "uint array needs 5 element.");
+            require(_paramsUint.length == 5, "uint array needs 5 element.");
             require(_paramsAddress.length == 0, "address array is not necessary.");
             require(_paramsUint[0] <= _paramsUint[1], "it needs to be low to high.");
             require(_paramsUint[1] <= _paramsUint[2], "it needs to be low to high.");
