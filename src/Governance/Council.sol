@@ -3,6 +3,7 @@ pragma solidity >=0.8.0;
 
 import "../Stake/ITokenStakingRewards.sol";
 import "./ITreasury.sol";
+import "./IMasterTreasury.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 
@@ -104,6 +105,7 @@ contract Council is Ownable{
     //Treasury interface
     ITreasury treasury;
     ITokenStakingRewards tokenStakingRewards;
+    IMasterTreasury masterTreasury;
 
     //控制合約
     address private controller;
@@ -176,9 +178,10 @@ contract Council is Ownable{
         _;
     }
 
-    constructor (address _tokenStakingRewards, address _treasuryAddress){
+    constructor (address _tokenStakingRewards, address _treasuryAddress, address _masterTreasuryAddress){
         //載入國庫合約
         treasury = ITreasury(_treasuryAddress);
+        masterTreasury = IMasterTreasury(_masterTreasuryAddress);
 
         //載入質押合約
         tokenStakingRewards = ITokenStakingRewards(_tokenStakingRewards);
@@ -502,6 +505,7 @@ contract Council is Ownable{
         }else{
             //從理事會中剔除，並移除國庫owner名單
             treasury.removeOwner(recallActivity.recallAddress);
+            masterTreasury.removeOwner(recallActivity.recallAddress);
             
             //TODO: 待優化
             for (uint256 i =0; i < members.length; i++){
@@ -564,6 +568,7 @@ contract Council is Ownable{
             for(uint256 j=0; j < confirms.length; j++){
                 isMemberMap[confirms[j].candidateAddress] = true;
                 treasury.addOwner(confirms[j].candidateAddress);
+                masterTreasury.addOwner(confirms[j].candidateAddress);
                 members.push(Member({
                     memberAddress: confirms[j].candidateAddress,
                     name: confirms[j].name,
@@ -644,5 +649,40 @@ contract Council is Ownable{
     function getMembersNum() external view returns (uint256){
         return members.length;
     }
+    //取得參與理事會競選持幣門檻
+    function getTokenNumThreshold() external view returns(uint256){
+        return rule.tokenNumThreshold;
+    }
+    //取得參與投票力門檻
+    function getVotePowerThreshold() external view returns (uint256){
+        return rule.votePowerThreshold;
+    }
+
+    //取得理事會上限人數
+    function getCouncilMemberNumLimit() external view returns(uint256){
+        return rule.memberNumLimit;
+    }
+
+    //取得vote power規範所需質押之幣量
+    function getLevelOfVotePower(uint256 _index) external view returns(uint256 res){
+        if (_index == 0){
+
+            res = votePowerTokenThreshold.level1;
+        }else if (_index == 1){
+            res = votePowerTokenThreshold.level2;
+        }else if (_index == 2){
+            res = votePowerTokenThreshold.level3;
+        }else if (_index == 3){
+            res = votePowerTokenThreshold.level4;
+        }else if (_index ==4 ){
+            res = votePowerTokenThreshold.level5;
+        }
+    }
+
+    function getVotePassThreshold() external view returns(uint256){
+        return rule.passVoteNumThreshold;
+    }
+
+    
 
 }

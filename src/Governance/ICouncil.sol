@@ -30,5 +30,10 @@ interface ICouncil{
     function recallVote(uint256 _votePower) external;
     function recallConfirm() external;
     function getMembersNum() external view returns (uint256);
+    function getTokenNumThreshold() external view returns(uint256);
+    function getVotePowerThreshold() external view returns (uint256);
+    function getCouncilMemberNumLimit() external view returns(uint256);
+    function getLevelOfVotePower(uint256 _index) external view returns(uint256);
+    function getVotePassThreshold() external view returns(uint256);
     
 }
