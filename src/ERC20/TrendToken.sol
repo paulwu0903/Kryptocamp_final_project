@@ -37,10 +37,23 @@ contract TrendToken is ERC20Snapshot, Ownable, ReentrancyGuard{
    
     //代幣分配
     Distribution public distribution; 
+
+    event TokenTotalSupply(uint256 indexed _tokenSupply);
+    event PublicMintTokens(address _to, uint256 _amount);
+
+
     //是否為controller
     modifier onlyController {
         require(controller == msg.sender, "not controller.");
         _;
+    }
+
+
+    // 建構子初始化參數
+    constructor (uint8 _decimals) 
+                ERC20("TrendToken", "TREND"){
+        decimals_ = _decimals;
+        tokenPrice = 10000 gwei;
     }
 
     //設定代幣分配
@@ -86,13 +99,6 @@ contract TrendToken is ERC20Snapshot, Ownable, ReentrancyGuard{
         distribution.publicMint.max_amount = _publicMintAmount;
         
     } 
-
-    // 建構子初始化參數
-    constructor (uint8 _decimals) 
-                ERC20("TrendToken", "TREND"){
-        decimals_ = _decimals;
-        tokenPrice = 10000 gwei;
-    }
     
     //設定控制者
     function setController(address _controllerAddress) external onlyOwner{
@@ -110,8 +116,10 @@ contract TrendToken is ERC20Snapshot, Ownable, ReentrancyGuard{
     }
 
     //取得最大供給量
-    function getMaxSupply() external pure returns(uint256){
+    function getMaxSupply() external returns(uint256){
+        emit TokenTotalSupply(maxSupply);
         return maxSupply;
+       
     }
 
     //多付退款
@@ -130,6 +138,8 @@ contract TrendToken is ERC20Snapshot, Ownable, ReentrancyGuard{
         
         distribution.publicMint.current_amount += _amount;
         _mint(msg.sender, _amount); 
+
+        emit PublicMintTokens(msg.sender, _amount);
 
         remainRefund(( tokenPrice * _amount), msg.value);
     }
