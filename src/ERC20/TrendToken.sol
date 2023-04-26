@@ -14,7 +14,6 @@ contract TrendToken is ERC20Snapshot, Ownable, ReentrancyGuard{
     uint8 public decimals_; //精準度
     uint256 public immutable maxSupply = 1000000000 ether; //最大供給量
     uint256 public tokenPrice; //價格，單位: wei
-    uint256 public whitelistNum;
 
     //控制合約
     address private controller;
@@ -91,14 +90,8 @@ contract TrendToken is ERC20Snapshot, Ownable, ReentrancyGuard{
     // 建構子初始化參數
     constructor (uint8 _decimals) 
                 ERC20("TrendToken", "TREND"){
-        whitelistNum = 0;
         decimals_ = _decimals;
         tokenPrice = 10000 gwei;
-    }
-
-    //設定白名單總數
-    function setWhitelistNum(uint256 _whitelistNum) external onlyOwner{ 
-        whitelistNum = _whitelistNum;
     }
     
     //設定控制者
@@ -159,10 +152,6 @@ contract TrendToken is ERC20Snapshot, Ownable, ReentrancyGuard{
 
     function getController() external view returns (address){
         return controller;
-    }
-
-    function getWhitelistNum() external view returns (uint256){
-        return whitelistNum;
     }
 
     function initMint(address _addr, uint256 _amount) private {
