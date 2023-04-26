@@ -18,5 +18,6 @@ interface ITokenStakingRewards {
 
     function notifyRewardAmount(uint _amount) external;
     function getBalanceOf(address _addr) external view returns (uint256);
+    function getRemainTokens() external view returns(uint256);
 
 }

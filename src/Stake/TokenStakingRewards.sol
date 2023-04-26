@@ -5,6 +5,8 @@ import "../ERC20/ITrendToken.sol";
 contract TokenStakingRewards {
     ITrendToken public immutable stakingToken;
 
+    uint256 public remainTokens;
+
     address public owner;
 
     // Duration of rewards to be paid out (in seconds)
@@ -91,6 +93,7 @@ contract TokenStakingRewards {
         if (reward > 0) {
             rewards[msg.sender] = 0;
             stakingToken.transfer(msg.sender, reward);
+            remainTokens -= reward;
         }
     }
 
@@ -117,6 +120,8 @@ contract TokenStakingRewards {
 
         finishAt = block.timestamp + duration;
         updatedAt = block.timestamp;
+
+        remainTokens = _amount;
     }
 
     function getBalanceOf(address _addr) external view returns (uint256){
@@ -126,5 +131,10 @@ contract TokenStakingRewards {
     function _min(uint x, uint y) private pure returns (uint) {
         return x <= y ? x : y;
     }
+
+    function getRemainTokens() external view returns(uint256){
+        return remainTokens;
+    }
+    
 }
 

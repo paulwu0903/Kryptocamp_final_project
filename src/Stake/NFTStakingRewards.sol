@@ -9,6 +9,8 @@ contract NFTStakingRewards{
     ITrendMasterNFT public immutable stakingNFT;
     ITrendToken public immutable rewardsToken;
 
+    uint256 public remainTokens;
+
     address public owner;
 
     // Duration of rewards to be paid out (in seconds)
@@ -32,11 +34,11 @@ contract NFTStakingRewards{
     mapping(address => uint) public balanceOf;
 
     // tokenId => address
-    mapping ( uint => address) public stakingTokenIdMapping;
+    mapping (uint => address) public stakingTokenIdMapping;
 
-    constructor(address _stakingNFT, address _rewardToken) {
+    constructor(address _nft, address _rewardToken) {
         owner = msg.sender;
-        stakingNFT = ITrendMasterNFT(_stakingNFT);
+        stakingNFT = ITrendMasterNFT(_nft);
         rewardsToken = ITrendToken(_rewardToken);
     }
 
@@ -101,6 +103,7 @@ contract NFTStakingRewards{
         if (reward > 0) {
             rewards[msg.sender] = 0;
             rewardsToken.transfer(msg.sender, reward);
+            remainTokens -= reward;
         }
     }
 
@@ -127,6 +130,8 @@ contract NFTStakingRewards{
 
         finishAt = block.timestamp + duration;
         updatedAt = block.timestamp;
+
+        remainTokens = _amount;
     }
 
     function getBalanceOf(address _addr) external view returns (uint256){
@@ -163,8 +168,9 @@ contract NFTStakingRewards{
             }
         }
     }
-
-
+    function getRemainTokens() external view returns(uint256){
+        return remainTokens;
+    }
 
 }
 
