@@ -6,4 +6,8 @@ interface ITrendToken is IERC20{
     function setController(address _controllerAddress) external;
     function tokenDistribute() external; 
     function publicMint(uint256 _amount) external payable;
+    function transferBalanceToTreasury(address _treasuryAddress) external;
+    function balanceOfAt(address account, uint256 snapshotId) external view returns (uint256);
+    function snapshot() external returns(uint256 snapshotId);
+    function totalSupplyAt(uint256 snapshotId) external view returns(uint256);
 }

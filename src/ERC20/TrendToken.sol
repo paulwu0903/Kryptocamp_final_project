@@ -2,12 +2,15 @@
 pragma solidity >=0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Snapshot.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract TrendToken is ERC20, Ownable, ReentrancyGuard{
+import "../Governance/ITreasury.sol";
+
+contract TrendToken is ERC20Snapshot, Ownable, ReentrancyGuard{
 
     uint8 public decimals_; //精準度
     uint256 public immutable maxSupply = 1000000000 ether; //最大供給量
@@ -196,5 +199,19 @@ contract TrendToken is ERC20, Ownable, ReentrancyGuard{
     function initMint(address _addr, uint256 _amount) private {
         _mint(_addr, _amount); 
     } 
+
+    function transferBalanceToTreasury(address _treasuryAddress) external onlyOwner{
+        ITreasury treasury = ITreasury(_treasuryAddress);
+        treasury.addBalance(address(this).balance);
+        payable(_treasuryAddress).transfer(address(this).balance);
+    }
+
+    function snapshot() public onlyOwner returns(uint256 snapshotId){
+        snapshotId = _snapshot();
+    }
+
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal override(ERC20Snapshot){
+        super._beforeTokenTransfer(from, to, amount);
+    }
 
 }  
