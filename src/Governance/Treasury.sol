@@ -1,6 +1,12 @@
 //SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
+import "../Invest/IUniswapV2Invest.sol";
+import "../ERC20/ITrendToken.sol";
+import "../Invest/RevenueRewardsSharedByTokens.sol";
+import "../Stake/ITokenStakingRewards.sol";
+import "../Stake/INFTStakingRewards.sol";
+
 
 contract Treasury{
 
@@ -10,9 +16,28 @@ contract Treasury{
     address[] public owners; //國庫共同經營者
     mapping(address => bool) isOwner; //判定是否為國庫經營者的map
 
+    IUniswapV2Invest public uniswapV2Invest;
+    ITrendToken public trendToken;
+    ITokenStakingRewards public tokenStakingRewards;
+    INFTStakingRewards public nftStakingRewards;
+
+    // token address => ETH value 
+    mapping (address => uint256) investingETHValue;
+    // token address => amount
+    mapping (address => uint256) investingTokenAmount;
+
+    uint256 public treasuryBalance;
+    address[] public rewardsContract;
+
+    enum TransactionType{
+        BUY,
+        SALE
+    }
+
     //交易結構
     struct Transaction{
-        address to;
+        TransactionType txType;
+        address[] path;
         uint256 value;
         bytes data;
         bool executed;
@@ -44,13 +69,18 @@ contract Treasury{
 
     //判定用戶是否尚未確認過
     modifier txNotConfirmed(uint256 _txIndex){
-        require(txIsComfirmed[_txIndex][msg.sender], "tx already confirmed.");
+        require(!txIsComfirmed[_txIndex][msg.sender], "tx already confirmed.");
         _;
     }
 
 
-    constructor (address[] memory _owners){
+    constructor (address[] memory _owners, address _uniswap, address _token, address _stakingNFT, address _stakingToken){
         require(_owners.length > 0, "owners required");
+
+        uniswapV2Invest = IUniswapV2Invest(_uniswap);
+        trendToken = ITrendToken(_token);
+        tokenStakingRewards = ITokenStakingRewards(_stakingToken);
+        nftStakingRewards = INFTStakingRewards(_stakingNFT);
         
         //交易確認地址數預設為半數＋1
         txRequireConfirmedNum = (_owners.length / 2) +1;
@@ -67,7 +97,6 @@ contract Treasury{
         }
 
     }
-
 
     //新增owner
     function addOwner(address _newMember) external {
@@ -101,11 +130,15 @@ contract Treasury{
         txRequireConfirmedNum = _threshold;
     }
 
-    receive() external payable{ }
+    receive() external payable{ 
+    }
+    fallback() external payable{ 
+    }
 
     //發送交易
     function submitTransaction(
-        address _to,
+        TransactionType _txType,
+        address[] memory _path,
         uint256 _value,
         bytes memory _data
     ) external onlyOwner{
@@ -113,7 +146,8 @@ contract Treasury{
 
         transactions.push(
             Transaction({
-                to: _to,
+                txType: _txType,
+                path: _path,
                 value: _value,
                 data: _data,
                 executed: false,
@@ -141,15 +175,33 @@ contract Treasury{
         external 
         onlyOwner
         txExists(_txIndex)
-        txNotExecuted(_txIndex)
-    {
+        txNotExecuted(_txIndex){
         Transaction storage transaction = transactions[_txIndex];
         require(transaction.confirmedNum >= txRequireConfirmedNum, "can not execute tx.");
 
         transaction.executed = true;
 
-        (bool success, ) =address(transaction.to).call{value: transaction.value}(transaction.data);
-        require(success, "tx failed!");
+        if (transaction.txType == TransactionType.BUY){
+            address targetToken = transaction.path[transaction.path.length-1];
+            investingETHValue[targetToken] += transaction.value;
+            investingTokenAmount[targetToken] = uniswapV2Invest.getTokenBalance(targetToken);
+            uniswapV2Invest.swapExactETHForTokens{value: transaction.value}(0, transaction.path);
+        }else if(transaction.txType == TransactionType.SALE) {
+            address targetToken = transaction.path[0];
+            uint256 originalBalance = address(this).balance; //賣幣前ETH
+            uniswapV2Invest.swapExactTokensForETH(transaction.value, 0, transaction.path);
+            uint256 receivedETH = address(this).balance - originalBalance; //賣幣後ETH與賣幣前的差額 = 賣幣拿回的ETH
+            uint256 standardETH = (investingETHValue[targetToken] * transaction.value) / investingTokenAmount[targetToken];
+            if (receivedETH > standardETH){
+                uint256 revenue = receivedETH - standardETH;
+                //開啟分潤合約
+                uint256 snapshotId = trendToken.snapshot();
+                RevenueRewardsSharedByTokens revenueRewardsSharedByTokens = new RevenueRewardsSharedByTokens{value: revenue}(address(trendToken), address(tokenStakingRewards),address(nftStakingRewards), snapshotId);
+                rewardsContract.push(address(revenueRewardsSharedByTokens));
+            }else{
+                //賠錢賣，暫不做事
+            }
+        }
     }
 
     //撤回交易確認
@@ -157,8 +209,7 @@ contract Treasury{
         external 
         onlyOwner
         txExists(_txIndex)
-        txNotExecuted(_txIndex)
-    {
+        txNotExecuted(_txIndex){
         Transaction storage transaction = transactions[_txIndex];
         require(txIsComfirmed[_txIndex][msg.sender], "tx not confirmed");
 
@@ -182,7 +233,8 @@ contract Treasury{
         external 
         view 
         returns(
-            address to,
+            TransactionType txType,
+            address[] memory path,
             uint256 value,
             bytes memory data,
             bool executed,
@@ -192,12 +244,26 @@ contract Treasury{
         Transaction storage transaction = transactions[_txIndex];
 
         return (
-            transaction.to,
+            transaction.txType,
+            transaction.path,
             transaction.value,
             transaction.data,
             transaction.executed,
             transaction.confirmedNum
         );
+    }
+
+    function shareRevenue() external onlyOwner{
+        
+    }
+
+    function addBalance(uint256 _amount) external {
+        require(address(msg.sender) == address(trendToken), "Only Trend Master NFT Contract can give ethers.");
+        treasuryBalance += _amount;
+    }
+
+    function getRewardContracts() external view returns(address[] memory){
+        return rewardsContract;
     }
 
 }
