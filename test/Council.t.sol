@@ -6,11 +6,15 @@ import "../src/SetUp.sol";
 import "../src/ERC20/TrendToken.sol";
 import "../src/Governance/Proposal.sol";
 import "../src/Governance/Treasury.sol";
+import "../src/Governance/MasterTreasury.sol";
 import "../src/ERC721A/TrendMasterNFT.sol";
 import "../src/Governance/Council.sol";
 import "../src/Stake/TokenStakingRewards.sol";
+import "../src/Stake/NFTStakingRewards.sol";
 import "../src/Airdrop/TokenAirdrop.sol";
 import "../src/Airdrop/ITokenAirdrop.sol";
+import "../src/Invest/IUniswapV2Invest.sol";
+import "../src/Invest/UniswapV2Invest.sol";
 
 contract CouncilTest is Test {
 
@@ -18,9 +22,9 @@ contract CouncilTest is Test {
     ITrendToken public trendToken; 
     ICouncil public council;
     ITreasury public treasury;
-    ITrendMasterNFT public trendMasterNFT;
     ITokenStakingRewards public tokenStakingRewards;
     ITokenAirdrop public tokenAirdrop;
+    IUniswapV2Invest public uniswapV2Invest;
     TokenStakingRewards tokenStakingRewardsInstance;
 
     address[] public owners = [
@@ -49,12 +53,16 @@ contract CouncilTest is Test {
     
     function setUp() public {
         vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
+        UniswapV2Invest uniswapV2Invest = new UniswapV2Invest(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
         TrendToken trendTokenInstance = new TrendToken(18);
-        Treasury treasuryInstance = new Treasury(owners);
         TrendMasterNFT trendMasterNFTInstance = new TrendMasterNFT();
+        NFTStakingRewards nftStakingRewardsInstance = new NFTStakingRewards(address(trendMasterNFTInstance), address(trendTokenInstance));
         tokenStakingRewardsInstance = new TokenStakingRewards(address(trendTokenInstance));
-        TokenAirdrop tokenAirdropInstance = new TokenAirdrop(address(trendTokenInstance));
-        Council councilInstance = new Council(address(tokenStakingRewardsInstance), address(treasuryInstance));
+
+        Treasury treasuryInstance = new Treasury(owners, address(uniswapV2Invest), address(trendTokenInstance), address(nftStakingRewardsInstance), address(tokenStakingRewardsInstance));
+        MasterTreasury masterTreasuryInstance = new MasterTreasury(owners, address(uniswapV2Invest), address(trendMasterNFTInstance));
+        //TokenAirdrop tokenAirdropInstance = new TokenAirdrop(address(trendTokenInstance));
+        Council councilInstance = new Council(address(tokenStakingRewardsInstance), address(treasuryInstance), address(masterTreasuryInstance));
         Proposal proposalInstance = new Proposal(address(tokenStakingRewardsInstance), address(trendMasterNFTInstance), address(treasuryInstance), address(councilInstance));
         
 
@@ -70,7 +78,7 @@ contract CouncilTest is Test {
                 _tokenStakeInterestAmount: 250000000 ether, 
                 _consultantAddress: address(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed), 
                 _consultantAmount: 30000000 ether, 
-                _airdropAddress: address(tokenAirdropInstance),
+                _airdropAddress: address(new TokenAirdrop(address(trendTokenInstance))),
                 _airdropAmount: 20000000 ether, 
                 _nftStakeInterestAddress: address(trendMasterNFTInstance), 
                 _nftStakeInterestAmount: 300000000 ether, 
@@ -82,7 +90,6 @@ contract CouncilTest is Test {
         proposal = IProposal(address(proposalInstance));
         trendToken = ITrendToken(address(trendTokenInstance));
         treasury = ITreasury(address(treasuryInstance));
-        trendMasterNFT = ITrendMasterNFT(address(trendMasterNFTInstance));
 
         trendToken.tokenDistribute();
 
@@ -93,13 +100,13 @@ contract CouncilTest is Test {
 
     }
 
-    
+    //測試理事會競選
     function testCampaign() public {
         
         // 初始化資金&質押
         dealHoldersAndMintTrendToken();
         //新增理事會提案
-        proposeCampaign(0);
+        proposeCampaign();
         //項目方更改提案階段為投票階段
         changeProposalPhaseToVote(0);
         //提案投票
@@ -120,11 +127,12 @@ contract CouncilTest is Test {
         campaignConfirm(5);
         
     }
+    //測試理事會罷免
     function testRecall() public {
         // 初始化資金&質押
         dealHoldersAndMintTrendToken();
         //提案罷免
-        proposeRecall(1,1);
+        proposeRecall(1);
         //項目方更改提案階段為投票階段
         changeProposalPhaseToVote(0);
         //提案投票
@@ -143,11 +151,12 @@ contract CouncilTest is Test {
         recallConfirm(2); 
     }
     
+     //測試理事會競選完，接著罷免
     function testCampaignAndRecall() public {
         // 初始化資金&質押
         dealHoldersAndMintTrendToken();
         //新增理事會提案
-        proposeCampaign(0);
+        proposeCampaign();
         //項目方更改提案階段為投票階段
         changeProposalPhaseToVote(0);
         //提案投票
@@ -167,8 +176,10 @@ contract CouncilTest is Test {
         //理事會競選結算
         campaignConfirm(5);
 
+        //--------------------------------
+
         //提案罷免
-        proposeRecall(1, 2);
+        proposeRecall(2);
         //項目方更改提案階段為投票階段
         changeProposalPhaseToVote(1);
         //提案投票
@@ -186,20 +197,264 @@ contract CouncilTest is Test {
         //罷免理事會結案
         recallConfirm(4); 
     }
-    
-    
-    
+
+    //測試提案修改候選人持幣門檻
+    function testSetCandidateTokenThreshold() public {
+        // 初始化資金&質押
+        dealHoldersAndMintTrendToken();
+        //提案更改參與理事會競選持幣門檻
+        proposeModifyCandidateThreshold();
+        //項目方更改提案階段為投票階段
+        changeProposalPhaseToVote(0);
+        //提案投票
+        proposalVoting(0);
+        //項目方更改提案狀態為結算階段
+        changeProposalPhaseToConfirming(0);
+        //提案結算
+        propsalConfirming(0);
+
+        //檢查理事會持幣門檻是否更動
+        assertEq(council.getTokenNumThreshold(), 100 ether);
+    }
+
+    //測試提案修改競選參與票數門檻
+    function testSetVotePoswerThreshold() public {
+        // 初始化資金&質押
+        dealHoldersAndMintTrendToken();
+        //提案更改參與票數門檻
+        proposeModifyCouncilVotePowerThreshold();
+        //項目方更改提案階段為投票階段
+        changeProposalPhaseToVote(0);
+        //提案投票
+        proposalVoting(0);
+        //項目方更改提案狀態為結算階段
+        changeProposalPhaseToConfirming(0);
+        //提案結算
+        propsalConfirming(0);
+
+        //檢查參選票數門檻
+        assertEq(council.getVotePowerThreshold(), 10);
+    }
+    function testSetCouncilNumLimit () public {
+
+        // 初始化資金&質押
+        dealHoldersAndMintTrendToken();
+        //提案更改理事會人數上限
+        proposeModifyCouncilNumLimit();
+        //項目方更改提案階段為投票階段
+        changeProposalPhaseToVote(0);
+        //提案投票
+        proposalVoting(0);
+        //項目方更改提案狀態為結算階段
+        changeProposalPhaseToConfirming(0);
+        //提案結算
+        propsalConfirming(0);
+        //檢查理事會上限值
+        assertEq(council.getCouncilMemberNumLimit(), 30);
+    }
+
+    function testLevelVotePowerThresholds() public{
+        // 初始化資金&質押
+        dealHoldersAndMintTrendToken();
+        //提案更改Council取得Vote Power門檻規範
+        proposeLevelVotePowerThresholds();
+        //項目方更改提案階段為投票階段
+        changeProposalPhaseToVote(0);
+        //提案投票
+        proposalVoting(0);
+        //項目方更改提案狀態為結算階段
+        changeProposalPhaseToConfirming(0);
+        //提案結算
+        propsalConfirming(0);
+        //檢查理各Level值有無正確
+        assertEq(council.getLevelOfVotePower(0), 10 ether);
+        assertEq(council.getLevelOfVotePower(1), 50 ether);
+        assertEq(council.getLevelOfVotePower(2), 100 ether);
+        assertEq(council.getLevelOfVotePower(3), 1000 ether);
+        assertEq(council.getLevelOfVotePower(4), 10000 ether);
+    }
+
+    function testSetCampaignPassVoteThreshold() public {
+        // 初始化資金&質押
+        dealHoldersAndMintTrendToken();
+        //提案更改Council競選通過的門檻
+        proposeSetPassThreshold();
+        //項目方更改提案階段為投票階段
+        changeProposalPhaseToVote(0);
+        //提案投票
+        proposalVoting(0);
+        //項目方更改提案狀態為結算階段
+        changeProposalPhaseToConfirming(0);
+        //提案結算
+        propsalConfirming(0);
+        //檢查理事會競選Pass門檻
+        assertEq(council.getVotePassThreshold(), 30);
+    }
+
+    function testSetCampaignDuration() public {
+        // 初始化資金&質押
+        dealHoldersAndMintTrendToken();
+        //提案更改Council競選各階段的期間
+        proposeModifyCampaignDuration();
+        //項目方更改提案階段為投票階段
+        changeProposalPhaseToVote(0);
+        //提案投票
+        proposalVoting(0);
+        //項目方更改提案狀態為結算階段
+        changeProposalPhaseToConfirming(0);
+        //提案結算
+        propsalConfirming(0);
+    }
+
+    function testSetRecallDuration() public {
+        // 初始化資金&質押
+        dealHoldersAndMintTrendToken();
+        //提案更改Council罷免各階段時間點
+        proposeModifyRecallDuration();
+        //項目方更改提案階段為投票階段
+        changeProposalPhaseToVote(0);
+        //提案投票
+        proposalVoting(0);
+        //項目方更改提案狀態為結算階段
+        changeProposalPhaseToConfirming(0);
+        //提案結算
+        propsalConfirming(0);
+    }
+
+    function proposeModifyRecallDuration() public {
+        clearArray();
+        uintArr.push(block.timestamp);
+        uintArr.push(block.timestamp);
+
+        vm.prank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
+        proposal.propose(
+            8,
+            "No.1 Update Council recall duration",
+            "The first modification of council recall duration.",
+            uintArr,
+            addrArr,
+            block.timestamp
+        );
+    }
+
+    function proposeModifyCampaignDuration() public {
+        clearArray();
+        uintArr.push(block.timestamp);
+        uintArr.push(block.timestamp);
+        uintArr.push(block.timestamp);
+
+        vm.prank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
+        proposal.propose(
+            7,
+            "No.1 Update Council campaign duration",
+            "The first modification of council campaign duration.",
+            uintArr,
+            addrArr,
+            block.timestamp
+        );
+
+        assertEq(proposal.getProposalsAmount(), 1);
+    }
+
+    function proposeSetPassThreshold() public {
+        clearArray();
+        uintArr.push(30);
+
+        vm.prank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
+        proposal.propose(
+            6,
+            "No.1 Update Council Pass Vote Power Thresholds",
+            "The first modification of pass Vote Power Thresholds.",
+            uintArr,
+            addrArr,
+            block.timestamp
+        );
+        assertEq(proposal.getProposalsAmount(), 1);
+    }
+
+    function proposeLevelVotePowerThresholds()  public {
+        clearArray();
+        uintArr.push(10 ether);
+        uintArr.push(50 ether);
+        uintArr.push(100 ether);
+        uintArr.push(1000 ether);
+        uintArr.push(10000 ether);
+
+        vm.prank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
+        proposal.propose(
+            5,
+            "No.1 Update Council Level Vote Power Thresholds",
+            "The first modification of Level Vote Power Thresholds.",
+            uintArr,
+            addrArr,
+            block.timestamp
+        );
+        assertEq(proposal.getProposalsAmount(), 1);
+    }
+
+    function proposeModifyCouncilNumLimit() public {
+        clearArray();
+        uintArr.push(30);
+
+        vm.prank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
+        proposal.propose(
+            4,
+            "No.1 Update Council Num Limit.",
+            "The first modification of Council num limit.",
+            uintArr,
+            addrArr,
+            block.timestamp
+        );
+
+        assertEq(proposal.getProposalsAmount(), 1);
+    }
+        
+
+    function proposeModifyCouncilVotePowerThreshold() public {
+        clearArray();
+        uintArr.push(10);
+
+        //持有10000顆Trend Token才可以提案
+        vm.prank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
+        proposal.propose(
+            3,
+            "No.1 Update Council Vote Power Threshold.",
+            "The first modification of Council vote power threshold.",
+            uintArr,
+            addrArr,
+            block.timestamp
+        );
+
+        assertEq(proposal.getProposalsAmount(), 1);
+    }
+
+    function proposeModifyCandidateThreshold() public {
+        clearArray();
+        uintArr.push(100 ether);
+
+        //持有10000顆Trend Token才可以提案
+        vm.prank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
+        proposal.propose(
+            2,
+            "No.1 Update Candidate Token",
+            "The first modification of Candidate token threshold.",
+            uintArr,
+            addrArr,
+            block.timestamp
+        );
+
+        assertEq(proposal.getProposalsAmount(), 1);
+    }
 
     //罷免提案
-    function proposeRecall(uint256 _index, uint256 _proposalAmount) public {
+    function proposeRecall( uint256 _proposalAmount) public {
         clearArray();
-        console.log("Length: ", uintArr.length);
         addrArr.push(0xaB084bCF2a30B457D71bDE1894de8014619A221A);
 
         //持有10000顆Trend Token才可提案
         vm.prank(0x60d3A1B09a4b26E109c209cd5350c40E11cf22D9);
         proposal.propose(
-            _index,
+            1,
             "No.1 Council Recall",
             "The first council recall.",
             uintArr,
@@ -207,7 +462,6 @@ contract CouncilTest is Test {
             block.timestamp
         );
         assertEq(proposal.getProposalsAmount(), _proposalAmount);
-            
     }
 
     //理事會罷免結算
@@ -303,14 +557,14 @@ contract CouncilTest is Test {
 
 
     //新增理事會提案
-    function proposeCampaign(uint256 _index) public {
+    function proposeCampaign() public {
         clearArray();
         uintArr.push(2);
         uintArr.push(5);
 
         vm.prank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
         proposal.propose(
-            _index,
+            0,
             "No.1 Council Campaign",
             "The first council campaign.",
             uintArr,
