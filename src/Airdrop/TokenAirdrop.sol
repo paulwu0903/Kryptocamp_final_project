@@ -12,6 +12,8 @@ contract TokenAirdrop is Ownable{
     bytes32 public whitelistMerkleTreeRoot; //白名單Merkle Tree Root
     uint256 public whitelistNum;
 
+    event AirdropToken(address indexed _receiver, uint256 indexed _amount);
+
     constructor (address _airdropToken){
         airdropToken = ITrendToken(_airdropToken);
     }
@@ -36,7 +38,9 @@ contract TokenAirdrop is Ownable{
     }
 
     function getAirdrop(bytes32[] calldata _proof) external verifiyProof(_proof){
-        airdropToken.transfer(msg.sender, getAirdropRewards());
+        uint256 rewards = getAirdropRewards();
+        airdropToken.transfer(msg.sender, rewards);
+        emit AirdropToken(msg.sender, rewards);
 
     }
 
