@@ -40,6 +40,7 @@ contract TrendToken is ERC20Snapshot, Ownable, ReentrancyGuard{
 
     event TokenTotalSupply(uint256 indexed _tokenSupply);
     event PublicMintTokens(address _to, uint256 _amount);
+    event BalanceOf(address _account, uint256 _balance);
 
 
     //是否為controller
