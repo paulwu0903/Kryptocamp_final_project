@@ -4,7 +4,6 @@ pragma solidity >=0.8.0;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Snapshot.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
@@ -36,20 +35,9 @@ contract TrendToken is ERC20Snapshot, Ownable, ReentrancyGuard{
         DistributionItem nftStakeInterest; // TrendMaster質押利息
         DistributionItem publicMint; //公售
     }
-
-    bytes32 public whitelistMerkleTreeRoot; //白名單Merkle Tree Root
-
    
     //代幣分配
     Distribution public distribution; 
-
-    //質押總數
-    uint256 public totalStakedToken;
-    
-
-    //利息
-    uint256 public dailyInterest;
-
     //是否為controller
     modifier onlyController {
         require(controller == msg.sender, "not controller.");
@@ -106,8 +94,6 @@ contract TrendToken is ERC20Snapshot, Ownable, ReentrancyGuard{
         whitelistNum = 0;
         decimals_ = _decimals;
         tokenPrice = 10000 gwei;
-        dailyInterest = 170000 ether;
-        totalStakedToken = 0;
     }
 
     //設定白名單總數
@@ -119,11 +105,6 @@ contract TrendToken is ERC20Snapshot, Ownable, ReentrancyGuard{
     function setController(address _controllerAddress) external onlyOwner{
         controller = _controllerAddress;
     } 
-
-    //設定利息
-    function setInterest(uint256 _interest) external onlyController{
-        dailyInterest = _interest;
-    }
 
     //設定價格
     function setPrice(uint256 _price) external onlyOwner{
@@ -175,18 +156,6 @@ contract TrendToken is ERC20Snapshot, Ownable, ReentrancyGuard{
         //執行公售代幣分配
         initMint(address(distribution.publicMint.target), distribution.publicMint.max_amount);
     }
-
-    //設定白名單Merkle Tree樹根
-    function setWhitelistMerkleTree(bytes32 _root) external onlyOwner{
-        whitelistMerkleTreeRoot = _root;
-    }
-
-    //驗證當下呼叫合約地址是否為白名單
-    function verifyWhitelist(bytes32[] calldata _proof) public view returns(bool){
-        bool isWhitelist = MerkleProof.verifyCalldata(_proof, whitelistMerkleTreeRoot, keccak256(abi.encodePacked(msg.sender)));
-        return isWhitelist;
-    }
-
 
     function getController() external view returns (address){
         return controller;
