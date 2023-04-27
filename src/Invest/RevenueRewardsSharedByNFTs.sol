@@ -11,6 +11,8 @@ contract RevenueRewardsSharedByNFTs is ReentrancyGuard{
 
     mapping (address => bool) isReceiveRewards;
 
+    event GetRewards(address _account, uint256 _value);
+
     constructor(address _nft) payable {
         trendMasterNFT = ITrendMasterNFT(_nft);
     }
@@ -21,6 +23,8 @@ contract RevenueRewardsSharedByNFTs is ReentrancyGuard{
         uint256 rewards = (address(this).balance / trendMasterNFT.totalSupply()) * trendMasterNFT.balanceOf(msg.sender);
         isReceiveRewards[msg.sender] = true;
         payable(msg.sender).transfer(rewards);
+
+        emit GetRewards(msg.sender, rewards);
     }
 
 }

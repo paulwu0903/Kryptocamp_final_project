@@ -17,7 +17,7 @@ contract RevenueRewardsSharedByTokens is ReentrancyGuard{
 
     mapping (address => bool) isReceiveRewards;
 
-
+    event GetRewards(address _account, uint256 _value);
 
     constructor(address _token, address _tokenStaking, address _nftStaking, uint256 _snapshotId) payable{
         trendToken = ITrendToken(_token);
@@ -32,6 +32,8 @@ contract RevenueRewardsSharedByTokens is ReentrancyGuard{
         uint256 rewards = (address(this).balance / trendToken.totalSupplyAt(snapshotId) - tokenStakingRewards.getRemainTokens() - nftStakingRewards.getRemainTokens()) * trendToken.balanceOfAt(msg.sender, snapshotId);
         isReceiveRewards[msg.sender] = true;
         payable(msg.sender).transfer(rewards);
+
+        emit GetRewards(msg.sender, rewards);
     }
 
 }
