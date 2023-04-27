@@ -53,14 +53,14 @@ contract CouncilTest is Test {
     
     function setUp() public {
         vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
-        UniswapV2Invest uniswapV2Invest = new UniswapV2Invest(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+        UniswapV2Invest uniswapV2InvestInstance = new UniswapV2Invest(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
         TrendToken trendTokenInstance = new TrendToken(18);
         TrendMasterNFT trendMasterNFTInstance = new TrendMasterNFT();
         NFTStakingRewards nftStakingRewardsInstance = new NFTStakingRewards(address(trendMasterNFTInstance), address(trendTokenInstance));
         tokenStakingRewardsInstance = new TokenStakingRewards(address(trendTokenInstance));
 
-        Treasury treasuryInstance = new Treasury(owners, address(uniswapV2Invest), address(trendTokenInstance), address(nftStakingRewardsInstance), address(tokenStakingRewardsInstance));
-        MasterTreasury masterTreasuryInstance = new MasterTreasury(owners, address(uniswapV2Invest), address(trendMasterNFTInstance));
+        Treasury treasuryInstance = new Treasury(owners, address(uniswapV2InvestInstance), address(trendTokenInstance), address(nftStakingRewardsInstance), address(tokenStakingRewardsInstance));
+        MasterTreasury masterTreasuryInstance = new MasterTreasury(owners, address(uniswapV2InvestInstance), address(trendMasterNFTInstance));
         //TokenAirdrop tokenAirdropInstance = new TokenAirdrop(address(trendTokenInstance));
         Council councilInstance = new Council(address(tokenStakingRewardsInstance), address(treasuryInstance), address(masterTreasuryInstance));
         Proposal proposalInstance = new Proposal(address(tokenStakingRewardsInstance), address(trendMasterNFTInstance), address(treasuryInstance), address(councilInstance));
@@ -69,6 +69,8 @@ contract CouncilTest is Test {
         councilInstance.setController(address(proposalInstance));
         trendTokenInstance.setController(address(proposalInstance));
         trendMasterNFTInstance.setController(address(proposalInstance));
+        uniswapV2InvestInstance.addController(address(treasuryInstance));
+        uniswapV2InvestInstance.addController(address(masterTreasuryInstance));
         
         trendTokenInstance.setDistribution(
             {
@@ -91,10 +93,10 @@ contract CouncilTest is Test {
         trendToken = ITrendToken(address(trendTokenInstance));
         treasury = ITreasury(address(treasuryInstance));
 
-        trendToken.tokenDistribute();
+         trendToken.tokenDistribute();
 
-        tokenStakingRewardsInstance.setRewardsDuration(86400 * 365);
-        tokenStakingRewardsInstance.notifyRewardAmount(250000000 ether);
+         tokenStakingRewardsInstance.setRewardsDuration(86400 * 365);
+         tokenStakingRewardsInstance.notifyRewardAmount(250000000 ether);
 
         vm.stopPrank();
 
