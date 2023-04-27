@@ -44,6 +44,7 @@ interface IProposal{
     function getProposalVotePowerOfUser()external returns(uint256);
     function getProposalsAmount() external returns(uint256);
     function getTokenNumThreshold() external returns(uint256);
+    function getVotePowerThreshold() external returns(uint256);
     
     
 }
