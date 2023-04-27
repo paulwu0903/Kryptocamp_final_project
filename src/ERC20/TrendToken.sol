@@ -38,7 +38,8 @@ contract TrendToken is ERC20Snapshot, Ownable, ReentrancyGuard{
     //代幣分配
     Distribution public distribution; 
 
-    event TokenTotalSupply(uint256 indexed _tokenSupply);
+    event TokenMaxSupply(uint256 indexed _maxSupply);
+    event TokenTotalSupply(uint256 indexed _totalSupply);
     event PublicMintTokens(address _to, uint256 _amount);
     event Balance(address _account, uint256 _balance);
     event BalanceOfAt(address _account, uint256 _balance, uint256 _snapshotId);
@@ -119,9 +120,15 @@ contract TrendToken is ERC20Snapshot, Ownable, ReentrancyGuard{
 
     //取得最大供給量
     function getMaxSupply() external returns(uint256){
-        emit TokenTotalSupply(maxSupply);
+        emit TokenMaxSupply(maxSupply);
         return maxSupply;
-       
+    }
+
+    //取得總供給量
+    function getTotalSupply() external returns(uint256){
+        uint256 tokenTotalSupply = totalSupply();
+        emit TokenTotalSupply(tokenTotalSupply);
+        return tokenTotalSupply;
     }
 
     //多付退款
