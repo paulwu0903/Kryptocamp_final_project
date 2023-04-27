@@ -43,6 +43,7 @@ contract TrendToken is ERC20Snapshot, Ownable, ReentrancyGuard{
     event PublicMintTokens(address _to, uint256 _amount);
     event Balance(address _account, uint256 _balance);
     event BalanceOfAt(address _account, uint256 _balance, uint256 _snapshotId);
+    event Controller (address _controllerAddress);
 
 
     //是否為controller
@@ -170,6 +171,7 @@ contract TrendToken is ERC20Snapshot, Ownable, ReentrancyGuard{
     }
 
     function getController() external view returns (address){
+        emit Controller(controller);
         return controller;
     }
 
