@@ -126,6 +126,40 @@ contract Council is Ownable{
     //voter地址
     address[] public voters;
 
+    event ActivityInfo(uint256 _activity);
+    event VotePassThreshold(uint256 _threshold);
+    event LevelOfVotePower(uint256 _level, uint256 _threshold);
+    event MemberNumLimit(uint256 _limit);
+    event VotePowerThreshold(uint256 _threshold);
+    event TokenNumThreshold(uint256 _threshold);
+    event MemberNum(uint256 _amount);
+    event VoterNum(uint256 _voterNum);
+    event CandidateNum(uint256 _candidateNum);
+    event CampaignStartTime(uint256 _startTime);
+    event RecallCurrentPhase(uint256 _phase);
+    event CampaignCurrentPhase(uint256 _phase);
+    event Controller (address _controllerAddress);
+    event CampaignConfirm(bool _success);
+    event CampaignSuccessResult(bool _success, Candidate[] newMembers);
+    event CandidateInfo(Candidate[] _candidates);
+    event RecallConfirm(bool _success);
+    event RecallSuccessResult(bool _success, address _recaller);
+    event RemainVotePower(uint256 _votePower);
+    event RecallVote(address _account, uint256 _votePower);
+    event CampaignVote(address _account, uint256 _votePower );
+    event Participate(address _candidate, string _name, string _politicalBriefing);
+    event CreateCampaign(uint256 _electedNum, uint256 _cadiddateNum);
+    event CreateRecall(address recaller);
+    event SetVotePowerTokenThreshold(uint256 _level1, uint256 _level2, uint256 _level3, uint256 _level4, uint256 _level5);
+    event SetVoteNumThreshold(uint256 _voterNumThreshold);
+    event SetPassThreshold(uint256 _passThreshold);
+    event SetTokenNumThreshold(uint256 _tokenNumThreshold);
+    event SetMemberNumLimit(uint256 _memberNumLimit);
+    event SetRecallDuration(uint256 _closeToVote, uint256 _voteToConfirm);
+    event SetCampaignDuration(uint256 _closeToAttend, uint256 _attendToVote, uint256 _voteToConfirm);
+
+
+
 
     //判斷競選活動是否為CLOSED狀態
     modifier isCampaignClosed{
@@ -232,8 +266,6 @@ contract Council is Ownable{
         controller = _controllerAddress;
     } 
 
-    //設定競選時間差
-
     //初始競選活動參數
     function initCampaign() private{
         campaign.campaignPhase = CampaignPhase.CLOSED;
@@ -287,6 +319,8 @@ contract Council is Ownable{
         rule.campaignDurationFromCloseToAttend = _closeToAttend;
         rule.campaignDurationFromAttendToVote = _attendToVote;
         rule.campaignDurationFromVoteToConfirm = _voteToConfirm;
+
+        emit SetCampaignDuration(_closeToAttend, _attendToVote, _voteToConfirm);
         
     }
 
@@ -299,24 +333,30 @@ contract Council is Ownable{
         {
         rule.recallDurationFromCloseToVote = _closeToVote;
         rule.recallDurationFromVoteToConfirm = _voteToConfirm;
+
+        emit SetRecallDuration(_closeToVote, _voteToConfirm);
     }
 
     //設定理事會成員數量上限
     function setMemberNumLimit(uint256 _memberNumLimit) external onlyController{
         rule.memberNumLimit = _memberNumLimit;
+        emit SetMemberNumLimit(_memberNumLimit);
     }
     //設定參與理事會競選持幣門檻
     function setTokenNumThreshold(uint256 _tokenNumThreshold) external onlyController{
         rule.tokenNumThreshold = _tokenNumThreshold;
+        emit SetTokenNumThreshold(_tokenNumThreshold);
     }
     //設定通過票數上限
     function setPassThreshold(uint256 _passThreshold) external onlyController {
         rule.passVoteNumThreshold = _passThreshold;
+        emit SetPassThreshold(_passThreshold);
     }
 
     //設定選民數量門檻
     function setVoterNumThreshold(uint256 _voterNumThreshold) external onlyController {
         rule.votePowerThreshold = _voterNumThreshold;
+        emit SetVoteNumThreshold(_voterNumThreshold);
     }
 
     //設定取得vote power token門檻
@@ -334,6 +374,8 @@ contract Council is Ownable{
         votePowerTokenThreshold.level3 = _level3;
         votePowerTokenThreshold.level4 = _level4;
         votePowerTokenThreshold.level5 = _level5;
+
+        emit SetVotePowerTokenThreshold(_level1, _level2, _level3, _level4, _level5);
     }
 
     //建立罷免活動
@@ -344,6 +386,8 @@ contract Council is Ownable{
         recallActivity.startTime = block.timestamp;
         recallActivity.recallAddress = _recallCandidate;
         recallActivity.votePowers = 0;
+
+        emit CreateRecall(_recallCandidate);
     }
 
     //建立競選活動，由提案合約觸發
@@ -356,6 +400,8 @@ contract Council is Ownable{
         campaign.electedNum= _electedNum;
         campaign.votePowers = 0;
         campaign.startTime = block.timestamp;
+
+        emit CreateCampaign(_electedNum, _candidateNum);
     }
 
     //更改競選階段為CANDIDATE_ATTENDING
@@ -433,6 +479,7 @@ contract Council is Ownable{
                 }
             )
         );
+        emit Participate(msg.sender, _name, _politicalBriefing);
     }
 
     //競選投票
@@ -449,6 +496,7 @@ contract Council is Ownable{
             isVote[msg.sender] = true;
             voters.push(msg.sender);
         }
+        emit CampaignVote(msg.sender, _votePower);
     }
 
 
@@ -465,14 +513,16 @@ contract Council is Ownable{
             voters.push(msg.sender);
         }
 
+        emit RecallVote(msg.sender, _votePower);
+
     }
 
     //取得剩餘多少票
     function getRemainVotePower(address _addr) public returns(uint256){
-
+        uint256 votePower = 0;
         if (votePowerMap[_addr] == 0){
             uint256 balance = tokenStakingRewards.getBalanceOf(_addr);
-            uint256 votePower = 0;
+            
 
             if (balance < votePowerTokenThreshold.level1){
                 votePower = 0;
@@ -489,12 +539,15 @@ contract Council is Ownable{
             }
 
             votePowerMap[_addr] = votePower;
-
-            return votePower;
-
+        
         }else{
-            return votePowerMap[_addr];
+            votePower = votePowerMap[_addr];
+            
         }   
+
+        emit RemainVotePower(votePower);
+
+        return votePower;
     }
 
     //罷免結算
@@ -502,11 +555,14 @@ contract Council is Ownable{
         //總投票力未達標，罷免無效
         if (recallActivity.votePowers < rule.votePowerThreshold){
             initRecallActivity();
+            emit RecallConfirm(false);
         }else{
             //從理事會中剔除，並移除國庫owner名單
             treasury.removeOwner(recallActivity.recallAddress);
             masterTreasury.removeOwner(recallActivity.recallAddress);
-            
+
+            emit RecallSuccessResult(true, recallActivity.recallAddress);
+
             //TODO: 待優化
             for (uint256 i =0; i < members.length; i++){
                 if (members[i].memberAddress == recallActivity.recallAddress){
@@ -519,11 +575,9 @@ contract Council is Ownable{
                     break;
                 }
             }
+            
             initRecallActivity();
         }
-
-
-
     }
 
 
@@ -532,6 +586,7 @@ contract Council is Ownable{
         //總投票力未達標，競選無效
         if (campaign.votePowers < rule.votePowerThreshold){
             initCampaign();
+            emit CampaignConfirm(false);
         }
 
         // copy candidates to confirms 
@@ -577,8 +632,12 @@ contract Council is Ownable{
                     timestamp: block.timestamp
                 }));
             }
+            emit CampaignSuccessResult(true, confirms);
+        }else{
+            emit CampaignConfirm(false);
         }
         initCampaign();
+        
     }
 
     //由小到大排序 confirms
@@ -608,11 +667,13 @@ contract Council is Ownable{
         confirms = _candidates;
     } 
 
-    function getController() external view returns (address){
+    function getController() external returns (address){
+        emit Controller(controller);
         return controller;
     }
 
-    function getCampaignPhase() external view returns(uint256 phase){
+    function getCampaignPhase() external returns(uint256){
+        uint256 phase = 0;
         if (campaign.campaignPhase == CampaignPhase.CLOSED){
             phase = 0;
         }else if (campaign.campaignPhase == CampaignPhase.CANDIDATE_ATTENDING){
@@ -622,9 +683,12 @@ contract Council is Ownable{
         }else if (campaign.campaignPhase == CampaignPhase.CONFIRMING){
             phase = 3;
         }
+        emit CampaignCurrentPhase(phase);
+        return phase;
     }
 
-    function getRecallPhase() external view returns(uint256 phase){
+    function getRecallPhase() external returns(uint256){
+        uint256 phase = 0;
         if (recallActivity.recallPhase == RecallPhase.CLOSED){
             phase = 0;
         }else if (recallActivity.recallPhase == RecallPhase.VOTING){
@@ -632,41 +696,57 @@ contract Council is Ownable{
         }else if (recallActivity.recallPhase == RecallPhase.CONFIRMING){
             phase = 2;
         }
+        emit RecallCurrentPhase(phase);
+        return phase;
     }
 
-    function getCampaignStartTime() external view returns(uint256 time){
-        return campaign.startTime;
+    function getCampaignStartTime() external returns(uint256 time){
+        uint256 startTime = campaign.startTime;
+        emit CampaignStartTime(startTime);
+        return startTime;
     }
 
-    function getCandidateNum() external view returns(uint256){
-        return candidates.length;
+    function getCandidateNum() external returns(uint256){
+        uint256 candidateNum = candidates.length;
+        emit CandidateNum(candidateNum);
+        return candidateNum;
     }
 
-    function getVotersNum() external view returns(uint256){
-        return voters.length;
+    function getVotersNum() external returns(uint256){
+        uint256 voterNum = voters.length;
+        emit VoterNum(voterNum);
+        return voterNum;
     }
 
-    function getMembersNum() external view returns (uint256){
-        return members.length;
+    function getMembersNum() external returns (uint256){
+        uint256 amount = members.length;
+        emit MemberNum(amount);
+        return amount;
     }
     //取得參與理事會競選持幣門檻
-    function getTokenNumThreshold() external view returns(uint256){
-        return rule.tokenNumThreshold;
+    function getTokenNumThreshold() external returns(uint256){
+        uint256 threshold = rule.tokenNumThreshold;
+        emit TokenNumThreshold(threshold);
+        return threshold;
     }
     //取得參與投票力門檻
-    function getVotePowerThreshold() external view returns (uint256){
-        return rule.votePowerThreshold;
+    function getVotePowerThreshold() external returns (uint256){
+        uint256 threshold = rule.votePowerThreshold;
+        emit VotePowerThreshold(threshold);
+        return threshold;
     }
 
     //取得理事會上限人數
-    function getCouncilMemberNumLimit() external view returns(uint256){
-        return rule.memberNumLimit;
+    function getCouncilMemberNumLimit() external returns(uint256){
+        uint256 limit = rule.memberNumLimit;
+        emit MemberNumLimit(limit);
+        return limit;
     }
 
     //取得vote power規範所需質押之幣量
-    function getLevelOfVotePower(uint256 _index) external view returns(uint256 res){
+    function getLevelOfVotePower(uint256 _index) external returns(uint256){
+        uint256 res = 0;
         if (_index == 0){
-
             res = votePowerTokenThreshold.level1;
         }else if (_index == 1){
             res = votePowerTokenThreshold.level2;
@@ -674,15 +754,33 @@ contract Council is Ownable{
             res = votePowerTokenThreshold.level3;
         }else if (_index == 3){
             res = votePowerTokenThreshold.level4;
-        }else if (_index ==4 ){
+        }else if (_index == 4 ){
             res = votePowerTokenThreshold.level5;
         }
+        emit LevelOfVotePower(_index, res);
+        return res;
     }
 
-    function getVotePassThreshold() external view returns(uint256){
-        return rule.passVoteNumThreshold;
+    function getVotePassThreshold() external returns(uint256){
+        uint256 threshold = rule.passVoteNumThreshold;
+        emit VotePassThreshold(threshold);
+        return threshold;
     }
 
-    
+    function getCurrentActiviry() external returns(uint256){
+        uint256 activity = 0;
+        if (campaign.campaignPhase != CampaignPhase.CLOSED){
+            activity = 1;
+        }else if (recallActivity.recallPhase != RecallPhase.CLOSED){
+            activity = 2;
+        }
+        emit ActivityInfo(activity);
+        return activity;
+    }
 
+    //取得候選人資訊 
+    function getCandidate() external returns(Candidate[] memory){
+        emit CandidateInfo(candidates);
+        return candidates;
+    }
 }
