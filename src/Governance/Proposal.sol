@@ -101,6 +101,27 @@ contract Proposal is Ownable{
     // index => address => bool
     mapping (uint256 => mapping (address => bool)) isProposalVote;
 
+    event Controller (address _controllerAddress);
+    event Propose(ProposalType _typeIndex, string _title, string _description, uint256[] _paramsUint, address[] _paramsAddress, uint256 _startTime);
+    event ProposalVote(
+                ProposalType _proposalType,
+                ProposalPhase _proposalPhase,
+                address _proposer,
+                string _title,
+                string _desciption,
+                uint256[] _paramsUint,
+                address[] _paramsAddress,
+                uint256 _votePowers,
+                uint256 _startTime
+                );
+
+    event GetProposalVotePowerOfUser(address _account, uint256 _votePower);
+    event ProposalConfirm(bool _success);
+    event GetProposalVotePower(uint256 _votePower);
+    event GetProposalsAmount(uint256 _amount);
+    event GetTokenNumThreshold(uint256 _tokenNumThreshold);
+    event GetVotePowerThreshold(uint256 _votePowerThreshold);
+
     constructor(
         address _tokenStakingRewards,
         address _trendMasterNFT,
@@ -265,24 +286,25 @@ contract Proposal is Ownable{
         _paramsUint,
         _paramsAddress,
         _startTime
-    )
-    {
+    ){
         ProposalType _proposalType = getProposalType(_typeIndex);
 
-        proposals.push(Template(
-            {
-                proposalType: _proposalType,
-                proposalPhase: ProposalPhase.VOTING,
-                proposer: msg.sender,
-                title: _title,
-                desciption: _description,
-                paramsUint: _paramsUint,
-                paramsAddress: _paramsAddress,
-                votePowers: 0,
-                startTime: _startTime
-            }
+        proposals.push(
+            Template(
+                {
+                    proposalType: _proposalType,
+                    proposalPhase: ProposalPhase.VOTING,
+                    proposer: msg.sender,
+                    title: _title,
+                    desciption: _description,
+                    paramsUint: _paramsUint,
+                    paramsAddress: _paramsAddress,
+                    votePowers: 0,
+                    startTime: _startTime
+                }
             )
         );
+        emit Propose(_proposalType, _title, _description, _paramsUint, _paramsAddress, _startTime);
     }
 
     //設定取得proposal vote power token門檻
@@ -292,7 +314,7 @@ contract Proposal is Ownable{
         uint256 _level3,
         uint256 _level4,
         uint256 _level5 
-    ) internal {
+    ) private {
         proposalVotePowerThreshold.level1 = _level1;
         proposalVotePowerThreshold.level2 = _level2;
         proposalVotePowerThreshold.level3 = _level3;
@@ -313,6 +335,18 @@ contract Proposal is Ownable{
         Template storage proposal = proposals[_proposalIndex];
         proposal.votePowers += votePower;
         isProposalVote[_proposalIndex][msg.sender] = true;
+        
+        emit ProposalVote(
+                proposal.proposalType,
+                proposal.proposalPhase,
+                proposal.proposer,
+                proposal.title,
+                proposal.desciption,
+                proposal.paramsUint,
+                proposal.paramsAddress,
+                proposal.votePowers,
+                proposal.startTime
+                );
     }
 
     //設定最低持幣門檻
@@ -340,7 +374,7 @@ contract Proposal is Ownable{
     }
 
     //取得Proposal投票力
-    function getProposalVotePowerOfUser()public view returns(uint256){
+    function getProposalVotePowerOfUser()public returns(uint256){
         
         uint256 balance = tokenStakingRewards.getBalanceOf(msg.sender);
         uint256 votePower = 0;
@@ -359,6 +393,7 @@ contract Proposal is Ownable{
             votePower = 25;
         }
 
+        emit GetProposalVotePowerOfUser(msg.sender, votePower);
         return votePower;
 
     }
@@ -369,9 +404,11 @@ contract Proposal is Ownable{
 
         if(proposal.votePowers < proposalRule.votePowerThreshold ){
             proposal.proposalPhase = ProposalPhase.REJECTED;
+            emit ProposalConfirm(false);
         }else{
             proposal.proposalPhase = ProposalPhase.EXECUTED;
             executeProposal(proposal);
+            emit ProposalConfirm(true);
         }
     } 
 
@@ -435,7 +472,8 @@ contract Proposal is Ownable{
         }*/
     }    
 
-    function getController() external view returns (address){
+    function getController() external returns (address){
+        emit Controller(controller);
         return controller;
     }
 
@@ -468,11 +506,7 @@ contract Proposal is Ownable{
             return ProposalType.ADJUST_PROPOSAL_VOTE_POWER_TOKEN_THRESHOLD;
         }else if(_index == 13 ){
             return ProposalType.ADJUST_TREASURY_CONFIRM_NUM_THRESHOLD;
-        }/*else if(_index == 14 ){
-            return ProposalType.ADJUST_TREND_MASTER_DAILY_INTEREST;
-        }else if(_index == 15 ){
-            return ProposalType.ADJUST_TREND_TOKEN_DAILY_INTEREST;
-        }*/
+        }
     }
     function getProposalPhaseIndex(uint256 _index) external view returns (uint256 phase){
         if(proposals[_index].proposalPhase == ProposalPhase.CLOSED){
@@ -488,12 +522,28 @@ contract Proposal is Ownable{
         }
     }
 
-    function getProposalVotePower(uint256 _proposalIndex) external view returns(uint256){
-        return proposals[_proposalIndex].votePowers;
+    function getProposalVotePower(uint256 _proposalIndex) external returns(uint256){
+        uint256 proposalVotePower = proposals[_proposalIndex].votePowers;
+        emit GetProposalVotePower(proposalVotePower);
+        return proposalVotePower;
     }
 
-    function getProposalsAmount() external view returns(uint256){
-        return proposals.length;
+    function getProposalsAmount() external returns(uint256){
+        uint256 totalNumOfProposal = proposals.length;
+        emit GetProposalsAmount(totalNumOfProposal);
+        return totalNumOfProposal;
+    }
+
+    function getTokenNumThreshold() external returns(uint256){
+        uint256 tokenNumThreshold = proposalRule.tokenNumThreshold;
+        emit GetTokenNumThreshold(tokenNumThreshold);
+        return tokenNumThreshold;
+    }
+
+    function getVotePowerThreshold() external returns(uint256){
+        uint256 votePowerThreshold = proposalRule.votePowerThreshold;
+        emit GetVotePowerThreshold(votePowerThreshold);
+        return votePowerThreshold;
     }
     
 }

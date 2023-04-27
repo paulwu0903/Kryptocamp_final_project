@@ -40,9 +40,10 @@ interface IProposal{
     function proposalVote(uint256 _proposalIndex) external;
     function getProposalPhaseIndex(uint256 _index) external view returns (uint256 phase);
     function proposalConfirm(uint256 _proposalIndex) external;
-    function getProposalVotePower(uint256 _proposalIndex) external view returns(uint256);
-    function getProposalVotePowerOfUser()external view returns(uint256);
-    function getProposalsAmount() external view returns(uint256);
+    function getProposalVotePower(uint256 _proposalIndex) external returns(uint256);
+    function getProposalVotePowerOfUser()external returns(uint256);
+    function getProposalsAmount() external returns(uint256);
+    function getTokenNumThreshold() external returns(uint256);
     
     
 }
