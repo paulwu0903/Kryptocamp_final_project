@@ -28,7 +28,7 @@ contract Proposal is Ownable{
         ADJUST_PROPOSAL_VOTE_POWER_THRESHOLD, //設定提案最低參與投票門檻
         ADJUST_PROPOSAL_TOKEN_NUM_THRESHOLD, //設定提案人最低持幣門檻
         ADJUST_PROPOSAL_DURATION, //設定提案各階段間格時間
-        ADJUST_PROPOSAL_VOTE_POWER_TOKEN_THRESHOLD, //設定提案各階段間隔時間
+        ADJUST_PROPOSAL_VOTE_POWER_TOKEN_THRESHOLD, //設定提案投票力個level門檻
 
         //Treasury
         ADJUST_TREASURY_CONFIRM_NUM_THRESHOLD //設定國庫交易確認門檻
