@@ -57,6 +57,7 @@ contract MasterTreasury{
     event GetTransactionCount(uint256 _amount);
     event GetTransaction(TransactionType _txType, address[] _path, uint256 _value, bytes data, bool _executed, uint256 _confirmedNum);
     event MasterTreasuryOriginalBalance(uint256 _balance);
+    event GetRewardContracts(address[] _contract);
 
     //判定是否為owner集合
     modifier onlyOwner(){
@@ -131,8 +132,9 @@ contract MasterTreasury{
                 break;
             }
         }
-        emit RemoveOwner(_removeMember);
         txRequireConfirmedNum = (owners.length /2) +1;
+
+        emit RemoveOwner(_removeMember);
     }
 
     //設定簽章數量門檻
@@ -280,10 +282,16 @@ contract MasterTreasury{
         );
     }
 
+
     function addBalance(uint256 _amount) external {
         require(address(msg.sender) == address(trendMasterNFT), "Only Trend Master NFT Contract can give ethers.");
         treasuryBalance += _amount;
         emit MasterTreasuryOriginalBalance(treasuryBalance);
+    }
+
+    function getRewardContracts() external returns(address[] memory){
+        emit GetRewardContracts(rewardsContract);
+        return rewardsContract;
     }
 
 }

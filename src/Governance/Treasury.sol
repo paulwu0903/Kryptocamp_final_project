@@ -49,6 +49,19 @@ contract Treasury{
 
     Transaction[] public transactions;
 
+    event AddNewOwner(address _newMember);
+    event RemoveOwner(address _member);
+    event SetTxRequireConfirmedNum(uint256 _threshold);
+    event SubmitTransaction(address _proposer, TransactionType _txType, address[] _path, uint256 _value, bytes _data);
+    event ConfirmTransaction(address _account, uint256 _txIndex);
+    event ExecuteTransaction(address executer, TransactionType _txType, address[] _path, uint256 _value, bytes _data, bool _execute, uint256 _confirmedNum);
+    event RevokeTransactionConfirmed(address _revoker, uint256 _txIndex);
+    event GetOwner(address[] _owners);
+    event GetTransactionCount(uint256 _amount);
+    event GetTransaction(TransactionType _txType, address[] _path, uint256 _value, bytes data, bool _executed, uint256 _confirmedNum);
+    event TreasuryOriginalBalance(uint256 _balance);
+    event GetRewardContracts(address[] _contract);
+
     //判定是否為owner集合
     modifier onlyOwner(){
         require(isOwner[msg.sender], "not owner.");
@@ -105,6 +118,8 @@ contract Treasury{
         owners.push(_newMember);
         isOwner[_newMember] = true;
         txRequireConfirmedNum = (owners.length /2) +1;
+
+         emit AddNewOwner(_newMember);
     }
 
     //移除owner
@@ -123,11 +138,14 @@ contract Treasury{
             }
         }
         txRequireConfirmedNum = (owners.length /2) +1;
+
+        emit RemoveOwner(_removeMember);
     }
 
     //設定簽章數量門檻
     function setTxRequireConfirmedNum(uint256 _threshold) external {
         txRequireConfirmedNum = _threshold;
+        emit SetTxRequireConfirmedNum(_threshold);
     }
 
     receive() external payable{ 
@@ -154,6 +172,7 @@ contract Treasury{
                 confirmedNum: 0
             })
         );
+        emit SubmitTransaction(msg.sender, _txType, _path, _value, _data);
     }
 
     //確認交易
@@ -167,6 +186,8 @@ contract Treasury{
         Transaction storage transaction = transactions[_txIndex];
         transaction.confirmedNum ++;
         txIsComfirmed[_txIndex][msg.sender] = true;
+
+        emit ConfirmTransaction(msg.sender, _txIndex);
 
     }
 
@@ -202,6 +223,8 @@ contract Treasury{
                 //賠錢賣，暫不做事
             }
         }
+        emit ExecuteTransaction(msg.sender, transaction.txType, transaction.path, transaction.value, transaction.data, transaction.executed, transaction.confirmedNum);
+
     }
 
     //撤回交易確認
@@ -215,23 +238,27 @@ contract Treasury{
 
         transaction.confirmedNum --;
         txIsComfirmed[_txIndex][msg.sender] = false;
+
+        emit RevokeTransactionConfirmed(msg.sender, _txIndex);
     }
 
     //取得owner集合
-    function getOwner() external view returns(address[] memory){
+    function getOwner() external returns(address[] memory){
+        emit GetOwner(owners);
         return owners;
     }
 
 
     //取得交易數量
-    function getTransactionCount() external view returns(uint256){
-        return transactions.length;
+    function getTransactionCount() external returns(uint256){
+        uint256 amount = transactions.length;
+        emit GetTransactionCount(amount);
+        return amount;
     }
 
     //取得交易資訊
     function getTransaction(uint256 _txIndex) 
-        external 
-        view 
+        external  
         returns(
             TransactionType txType,
             address[] memory path,
@@ -242,6 +269,8 @@ contract Treasury{
             )
     {
         Transaction storage transaction = transactions[_txIndex];
+        emit GetTransaction(transaction.txType, transaction.path, transaction.value, transaction.data, transaction.executed, transaction.confirmedNum);
+
 
         return (
             transaction.txType,
@@ -256,9 +285,11 @@ contract Treasury{
     function addBalance(uint256 _amount) external {
         require(address(msg.sender) == address(trendToken), "Only Trend Master NFT Contract can give ethers.");
         treasuryBalance += _amount;
+        emit TreasuryOriginalBalance(treasuryBalance);
     }
 
-    function getRewardContracts() external view returns(address[] memory){
+    function getRewardContracts() external returns(address[] memory){
+        emit GetRewardContracts(rewardsContract);
         return rewardsContract;
     }
 
