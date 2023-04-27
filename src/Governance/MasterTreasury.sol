@@ -46,6 +46,8 @@ contract MasterTreasury{
 
     Transaction[] public transactions;
 
+
+
     //判定是否為owner集合
     modifier onlyOwner(){
         require(isOwner[msg.sender], "not owner.");
@@ -254,10 +256,6 @@ contract MasterTreasury{
     function addBalance(uint256 _amount) external {
         require(address(msg.sender) == address(trendMasterNFT), "Only Trend Master NFT Contract can give ethers.");
         treasuryBalance += _amount;
-    }
-
-    function shareRevenue() external onlyOwner{
-        
     }
 
 }

@@ -253,10 +253,6 @@ contract Treasury{
         );
     }
 
-    function shareRevenue() external onlyOwner{
-        
-    }
-
     function addBalance(uint256 _amount) external {
         require(address(msg.sender) == address(trendToken), "Only Trend Master NFT Contract can give ethers.");
         treasuryBalance += _amount;
