@@ -170,7 +170,7 @@ contract TrendToken is ERC20Snapshot, Ownable, ReentrancyGuard{
         initMint(address(distribution.publicMint.target), distribution.publicMint.max_amount);
     }
 
-    function getController() external view returns (address){
+    function getController() external returns (address){
         emit Controller(controller);
         return controller;
     }
