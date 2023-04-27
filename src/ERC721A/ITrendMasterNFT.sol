@@ -8,4 +8,6 @@ interface ITrendMasterNFT is IERC721A{
     function setController(address _controllerAddress) external;
     function transferBalanceToTreasury(address _treasuryAddress) external;
     function totalSupply() external view override returns (uint256);
+    function getTokenURI (uint256 _tokenId) external returns (string memory);
+    function getController() external returns (address);
 }

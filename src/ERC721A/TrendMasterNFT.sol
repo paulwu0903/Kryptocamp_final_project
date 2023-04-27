@@ -49,6 +49,16 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
 
     uint8 openBlindPhase = 0;
 
+    event BalanceOf(address _account, uint256 _amount);
+    event AuctionInfo(uint256 _startPrice, uint256 _endPrice, uint256 _priceStep, uint256 _startTime, uint256 _timeStep, uint256 _timeStepNum);
+    event AuctionPrice(uint256 _price);
+    event BlindboxPhrase(uint256 _openBlindPhase);
+    event WhitelistMint(address _account,uint256 _price, uint256 _amount);
+    event PublicMint(address _account, uint256 _price, uint256 _amount);
+    event TokenURI(uint256 _tokenId, string uri);
+    event Controller (address _controllerAddress);
+    event TransferToTreasury(address _treasuryAddress, uint256 _value);
+
     //檢查是否超出最大供給量
     modifier checkOverMaxSupply(uint256 _quentity){
         require(totalSupply() + _quentity <= maxSupply, "Over the max supply.");
@@ -58,6 +68,11 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
     //是否為controller
     modifier onlyController {
         require(controller == msg.sender, "not controller.");
+        _;
+    }
+
+    modifier ownNFT(uint256 _tokenId){
+        require(ownerOf(_tokenId) == msg.sender, "NFT is not yours.");
         _;
     }
 
@@ -90,10 +105,6 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
     function setWhielistlimit(uint8 _amount) external onlyOwner{
         whitelistMintParam.whitelistMintLimit = _amount;
     }
-    modifier ownNFT(uint256 _tokenId){
-        require(ownerOf(_tokenId) == msg.sender, "NFT is not yours.");
-        _;
-    }
     
     //設定荷蘭拍參數
     function setAuction(
@@ -113,12 +124,13 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
         auction.timeStepNum = _timeStepNum;
     }
     //取得荷蘭拍參數
-    function getAuctionInfo() external view returns(Auction memory){
+    function getAuctionInfo() external returns(Auction memory){
+        emit AuctionInfo(auction.startPrice, auction.endPrice, auction.priceStep, auction.startTime, auction.timeStep, auction.timeStepNum);
         return auction;
     }
 
     //取得荷蘭拍當前NFT售價
-    function getAuctionPrice() private view returns(uint256){
+    function getAuctionPrice() private returns(uint256){
 
         if (block.timestamp <= auction.startTime){
             return auction.startPrice;
@@ -130,8 +142,12 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
             steps = auction.timeStepNum;
         }
 
-      return auction.startPrice >= auction.priceStep * steps?
+        uint256 price = auction.startPrice >= auction.priceStep * steps?
          auction.startPrice - (auction.priceStep * steps) : auction.endPrice;
+
+         emit AuctionPrice(price);
+
+      return price;
     } 
 
     //開盲盒
@@ -141,10 +157,15 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
         openBlindPhase++;
     }
 
+    //查詢盲盒狀態
+    function getBlindboxPhase() external returns(uint256){
+        emit BlindboxPhrase(openBlindPhase);
+        return openBlindPhase;
+    }
+
 
     //多付退款
     function remainRefund(uint256 _need, uint256 _pay) private {
-
         if (_need < _pay){
             (bool success, ) = msg.sender.call{value: (_pay - _need)}("");
             require(success, "Transaction Failed!");
@@ -174,6 +195,12 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
             return bytes(baseURI).length > 0 ? "https://gateway.pinata.cloud/ipfs/QmSy6wJPhTkqZ11UJVgRJDFey9vgw58pn3n6BVkAw83bjJ": "";
         }
     }
+    
+    function getTokenURI (uint256 _tokenId) external returns (string memory){
+        string memory uri = tokenURI(_tokenId);
+        emit TokenURI(_tokenId, uri);
+        return uri;
+    }
 
     //白名單Mint
     function whitelistMint(bytes32[] calldata _proof, uint256 _quantity) external payable nonReentrant checkOverMaxSupply(_quantity){
@@ -186,26 +213,39 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
         //若多支付，則退還給用戶
         remainRefund((_quantity * whitelistMintParam.whitelistMintPrice), msg.value);
 
+        emit WhitelistMint(msg.sender, whitelistMintParam.whitelistMintPrice , _quantity);
+
     }
 
     //公售荷蘭拍
     function publicAuctionMint(uint256 _quantity)  external payable nonReentrant checkOverMaxSupply(_quantity) {
-        require(msg.value > _quantity * getAuctionPrice(), "ETH not enough.");
+        uint256 price = getAuctionPrice();
+        require(msg.value > _quantity * price, "ETH not enough.");
 
         _mint(msg.sender, _quantity);
 
         //若多支付，則退還給用戶
-        remainRefund(( _quantity * getAuctionPrice()), msg.value);
+        remainRefund(( _quantity * price), msg.value);
+
+        emit PublicMint(msg.sender, price , _quantity);
     }
 
-    function getController() external view returns (address){
+    function getController() external returns (address){
+        emit Controller(controller);
         return controller;
     }
 
     function transferBalanceToTreasury(address _treasuryAddress) external onlyOwner{
         IMasterTreasury masterTreasury = IMasterTreasury(_treasuryAddress);
         masterTreasury.addBalance(address(this).balance);
-       payable(_treasuryAddress).transfer(address(this).balance);
+        payable(_treasuryAddress).transfer(address(this).balance);
+        emit TransferToTreasury(_treasuryAddress, address(this).balance);
+    }
+
+    function getBalanceOf(address _account) external returns(uint256){
+        uint256 balance = balanceOf(_account);
+        emit BalanceOf(_account, balance);
+        return balance;
     }
 
 
