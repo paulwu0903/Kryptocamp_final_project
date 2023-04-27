@@ -51,7 +51,6 @@ contract Treasury{
 
     event AddNewOwner(address _newMember);
     event RemoveOwner(address _member);
-    event SetTxRequireConfirmedNum(uint256 _threshold);
     event SubmitTransaction(address _proposer, TransactionType _txType, address[] _path, uint256 _value, bytes _data);
     event ConfirmTransaction(address _account, uint256 _txIndex);
     event ExecuteTransaction(address executer, TransactionType _txType, address[] _path, uint256 _value, bytes _data, bool _execute, uint256 _confirmedNum);
@@ -145,7 +144,6 @@ contract Treasury{
     //設定簽章數量門檻
     function setTxRequireConfirmedNum(uint256 _threshold) external {
         txRequireConfirmedNum = _threshold;
-        emit SetTxRequireConfirmedNum(_threshold);
     }
 
     receive() external payable{ 

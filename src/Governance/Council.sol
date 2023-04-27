@@ -150,13 +150,6 @@ contract Council is Ownable{
     event Participate(address _candidate, string _name, string _politicalBriefing);
     event CreateCampaign(uint256 _electedNum, uint256 _cadiddateNum);
     event CreateRecall(address recaller);
-    event SetVotePowerTokenThreshold(uint256 _level1, uint256 _level2, uint256 _level3, uint256 _level4, uint256 _level5);
-    event SetVoteNumThreshold(uint256 _voterNumThreshold);
-    event SetPassThreshold(uint256 _passThreshold);
-    event SetTokenNumThreshold(uint256 _tokenNumThreshold);
-    event SetMemberNumLimit(uint256 _memberNumLimit);
-    event SetRecallDuration(uint256 _closeToVote, uint256 _voteToConfirm);
-    event SetCampaignDuration(uint256 _closeToAttend, uint256 _attendToVote, uint256 _voteToConfirm);
 
 
 
@@ -319,9 +312,6 @@ contract Council is Ownable{
         rule.campaignDurationFromCloseToAttend = _closeToAttend;
         rule.campaignDurationFromAttendToVote = _attendToVote;
         rule.campaignDurationFromVoteToConfirm = _voteToConfirm;
-
-        emit SetCampaignDuration(_closeToAttend, _attendToVote, _voteToConfirm);
-        
     }
 
     //設定罷免相關時間
@@ -333,30 +323,24 @@ contract Council is Ownable{
         {
         rule.recallDurationFromCloseToVote = _closeToVote;
         rule.recallDurationFromVoteToConfirm = _voteToConfirm;
-
-        emit SetRecallDuration(_closeToVote, _voteToConfirm);
     }
 
     //設定理事會成員數量上限
     function setMemberNumLimit(uint256 _memberNumLimit) external onlyController{
         rule.memberNumLimit = _memberNumLimit;
-        emit SetMemberNumLimit(_memberNumLimit);
     }
     //設定參與理事會競選持幣門檻
     function setTokenNumThreshold(uint256 _tokenNumThreshold) external onlyController{
         rule.tokenNumThreshold = _tokenNumThreshold;
-        emit SetTokenNumThreshold(_tokenNumThreshold);
     }
     //設定通過票數上限
     function setPassThreshold(uint256 _passThreshold) external onlyController {
         rule.passVoteNumThreshold = _passThreshold;
-        emit SetPassThreshold(_passThreshold);
     }
 
     //設定選民數量門檻
     function setVoterNumThreshold(uint256 _voterNumThreshold) external onlyController {
         rule.votePowerThreshold = _voterNumThreshold;
-        emit SetVoteNumThreshold(_voterNumThreshold);
     }
 
     //設定取得vote power token門檻
@@ -375,7 +359,6 @@ contract Council is Ownable{
         votePowerTokenThreshold.level4 = _level4;
         votePowerTokenThreshold.level5 = _level5;
 
-        emit SetVotePowerTokenThreshold(_level1, _level2, _level3, _level4, _level5);
     }
 
     //建立罷免活動
