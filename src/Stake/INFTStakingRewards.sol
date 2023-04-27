@@ -12,7 +12,7 @@ interface INFTStakingRewards{
 
     function withdraw(uint _tokenId) external;
 
-    function earned(address _account) external view returns (uint);
+    function earned(address _account) external returns (uint);
 
     function getReward() external;
 
@@ -21,7 +21,7 @@ interface INFTStakingRewards{
     function notifyRewardAmount(uint _amount) external;
 
     function getBalanceOf(address _addr) external view returns (uint256);
-    function getRemainTokens() external view returns(uint256);
+    function getRemainTokens() external returns(uint256);
 
     
 

@@ -36,6 +36,14 @@ contract NFTStakingRewards{
     // tokenId => address
     mapping (uint => address) public stakingTokenIdMapping;
 
+    event GetRemainTokens(uint256 _reaminTokens);
+    event GetBalanceOf(address _account, uint256 _balance);
+    event Stake(address _account, uint256 _tokenId);
+    event Withdraw(address _account, uint256 _tokenId);
+    event Earned(address _account, uint256 earn);
+    event RewardPerToken(uint256 _rewardPerToken);
+    event GetFinishAt(uint256 _finishAt);
+
     constructor(address _nft, address _rewardToken) {
         owner = msg.sender;
         stakingNFT = ITrendMasterNFT(_nft);
@@ -63,15 +71,19 @@ contract NFTStakingRewards{
         return _min(finishAt, block.timestamp);
     }
 
-    function rewardPerToken() public view returns (uint) {
+    function rewardPerToken() public returns (uint) {
         if (totalSupply == 0) {
+            emit RewardPerToken(rewardPerTokenStored);
             return rewardPerTokenStored;
         }
-
-        return
-            rewardPerTokenStored +
+        uint256 res = rewardPerTokenStored +
             (rewardRate * (lastTimeRewardApplicable() - updatedAt) * 1e18) /
             totalSupply;
+        
+        emit RewardPerToken(res);
+
+        return res;
+            
     }
 
     function stake(uint _tokenId) external updateReward(msg.sender) {
@@ -81,6 +93,8 @@ contract NFTStakingRewards{
         balanceOf[msg.sender]++;
         stakingTokenIdMapping[_tokenId] = msg.sender;
         totalSupply++;
+
+        emit Stake(msg.sender, _tokenId);
     }
 
     function withdraw(uint _tokenId) external updateReward(msg.sender) {
@@ -89,13 +103,18 @@ contract NFTStakingRewards{
         balanceOf[msg.sender]--;
         totalSupply--;
         stakingNFT.safeTransferFrom(address(this), msg.sender, _tokenId);
+
+        emit Withdraw(msg.sender, _tokenId);
     }
 
-    function earned(address _account) public view returns (uint) {
-        return
-            ((balanceOf[_account] *
+    //取得可以賺多少
+    function earned(address _account) public returns (uint) {
+        uint256 earn = ((balanceOf[_account] *
                 (rewardPerToken() - userRewardPerTokenPaid[_account])) / 1e18) +
             rewards[_account];
+        emit Earned(_account, earn);
+        return earn;
+            
     }
 
     function getReward() external updateReward(msg.sender) {
@@ -133,9 +152,11 @@ contract NFTStakingRewards{
 
         remainTokens = _amount;
     }
-
-    function getBalanceOf(address _addr) external view returns (uint256){
-        return balanceOf[_addr];
+    //取得質押多少幣
+    function getBalanceOf(address _addr) external returns (uint256){
+        uint256 balance = balanceOf[_addr];
+        emit GetBalanceOf(_addr, balance);
+        return balance;
     }
 
     function _min(uint x, uint y) private pure returns (uint) {
@@ -168,8 +189,17 @@ contract NFTStakingRewards{
             }
         }
     }
-    function getRemainTokens() external view returns(uint256){
+
+    //取得還有多少利息沒發出去
+    function getRemainTokens() external returns(uint256){
+        emit GetRemainTokens(remainTokens);
         return remainTokens;
+    }
+
+    //取得結束時間
+    function getFinishAt() external returns(uint256){
+        emit GetFinishAt(finishAt);
+        return finishAt;
     }
 
 }
