@@ -2,6 +2,7 @@
 pragma solidity >=0.8.0;
 
 import "./ITreasury.sol";
+import "./IMasterTreasury.sol";
 import "./ICouncil.sol";
 import "../Stake/ITokenStakingRewards.sol";
 import "../ERC721A/ITrendMasterNFT.sol";
@@ -31,7 +32,8 @@ contract Proposal is Ownable{
         ADJUST_PROPOSAL_VOTE_POWER_TOKEN_THRESHOLD, //設定提案投票力個level門檻
 
         //Treasury
-        ADJUST_TREASURY_CONFIRM_NUM_THRESHOLD //設定國庫交易確認門檻
+        ADJUST_TREASURY_CONFIRM_NUM_THRESHOLD, //設定國庫交易確認門檻
+        ADJUST_TREASURY_CONFIRM_NUM_MASTER_THRESHOLD //設定大師國庫交易確認門檻
         
         //NFT
         //ADJUST_TREND_MASTER_DAILY_INTEREST, //調整質押Trend Master每日利息
@@ -96,6 +98,7 @@ contract Proposal is Ownable{
     ITrendMasterNFT trendMasterNFT;
     ITokenStakingRewards tokenStakingRewards;
     ITreasury treasury;
+    IMasterTreasury masterTreasury;
     ICouncil council;
 
     // index => address => bool
@@ -127,12 +130,14 @@ contract Proposal is Ownable{
         address _tokenStakingRewards,
         address _trendMasterNFT,
         address _treasury,
+        address _masterTreasury,
         address _council)
         {
         //導入合約介面
         tokenStakingRewards = ITokenStakingRewards(_tokenStakingRewards);
         trendMasterNFT = ITrendMasterNFT(_trendMasterNFT);
         treasury = ITreasury(_treasury);
+        masterTreasury = IMasterTreasury(_masterTreasury);
         council = ICouncil(_council);
 
         //提案規範初始化
@@ -226,9 +231,8 @@ contract Proposal is Ownable{
             _proposalType ==  ProposalType.ADJUST_COUNCIL_CAMPAIGN_PASS_VOTE_POWER_THRESHOLD ||
             _proposalType ==  ProposalType.ADJUST_PROPOSAL_VOTE_POWER_THRESHOLD ||
             _proposalType ==  ProposalType.ADJUST_PROPOSAL_TOKEN_NUM_THRESHOLD ||
-            _proposalType ==  ProposalType.ADJUST_TREASURY_CONFIRM_NUM_THRESHOLD //||
-            //_proposalType ==  ProposalType.ADJUST_TREND_MASTER_DAILY_INTEREST ||
-            /*_proposalType ==  ProposalType.ADJUST_TREND_TOKEN_DAILY_INTEREST*/){
+            _proposalType ==  ProposalType.ADJUST_TREASURY_CONFIRM_NUM_THRESHOLD ||
+            _proposalType ==  ProposalType.ADJUST_TREASURY_CONFIRM_NUM_MASTER_THRESHOLD){
             require(_paramsUint.length == 1, "uint array just needs 1 element.");
             require(_paramsAddress.length == 0, "address array is not necessary.");
             _;
@@ -268,7 +272,6 @@ contract Proposal is Ownable{
     function setController(address _controller) external onlyOwner{
         controller = _controller;
     } 
-
 
     //提案
     function propose(
@@ -466,11 +469,9 @@ contract Proposal is Ownable{
             );
         }else if (_proposal.proposalType ==  ProposalType.ADJUST_TREASURY_CONFIRM_NUM_THRESHOLD){
             treasury.setTxRequireConfirmedNum(_proposal.paramsUint[0]);
-        }/*else if (_proposal.proposalType ==  ProposalType.ADJUST_TREND_MASTER_DAILY_INTEREST){
-            trendMasterNFT.setInterest( _proposal.paramsUint[0]);
-        }else if (_proposal.proposalType ==  ProposalType.ADJUST_TREND_TOKEN_DAILY_INTEREST){
-            trendToken.setInterest( _proposal.paramsUint[0]);
-        }*/
+        }else if (_proposal.proposalType ==  ProposalType.ADJUST_TREASURY_CONFIRM_NUM_MASTER_THRESHOLD){
+            masterTreasury.setTxRequireConfirmedNum(_proposal.paramsUint[0]);
+        }
     }    
 
     function getController() external returns (address){
@@ -507,6 +508,8 @@ contract Proposal is Ownable{
             return ProposalType.ADJUST_PROPOSAL_VOTE_POWER_TOKEN_THRESHOLD;
         }else if(_index == 13 ){
             return ProposalType.ADJUST_TREASURY_CONFIRM_NUM_THRESHOLD;
+        }else if(_index == 14 ){
+            return ProposalType.ADJUST_TREASURY_CONFIRM_NUM_MASTER_THRESHOLD;
         }
     }
     function getProposalPhaseIndex(uint256 _index) external view returns (uint256 phase){
@@ -562,7 +565,6 @@ contract Proposal is Ownable{
         emit GetVotePowerTokenThreshold(threshold);
 
         return threshold;
-
     }
     
 }
