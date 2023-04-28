@@ -238,7 +238,7 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
         emit Controller(controller);
         return controller;
     }
-f
+
     function transferBalanceToTreasury(address _treasuryAddress) external onlyOwner{
         IMasterTreasury masterTreasury = IMasterTreasury(_treasuryAddress);
         masterTreasury.addBalance(address(this).balance);
