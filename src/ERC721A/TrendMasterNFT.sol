@@ -134,7 +134,7 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
     }
 
     //取得荷蘭拍當前NFT售價
-    function getAuctionPrice() private returns(uint256){
+    function getAuctionPrice() public returns(uint256){
 
         if (block.timestamp <= auction.startTime){
             return auction.startPrice;
@@ -149,7 +149,7 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
         uint256 price = auction.startPrice >= auction.priceStep * steps?
          auction.startPrice - (auction.priceStep * steps) : auction.endPrice;
 
-         emit AuctionPrice(price);
+        emit AuctionPrice(price);
 
       return price;
     } 
@@ -238,7 +238,7 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
         emit Controller(controller);
         return controller;
     }
-
+f
     function transferBalanceToTreasury(address _treasuryAddress) external onlyOwner{
         IMasterTreasury masterTreasury = IMasterTreasury(_treasuryAddress);
         masterTreasury.addBalance(address(this).balance);
