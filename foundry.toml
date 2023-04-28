@@ -4,10 +4,23 @@ out = 'out'
 test = 'test'
 libs = ['lib']
 
+
+solc = "0.8.4"
+
+optimizer = true
+optimizer_run = 20_000
+
 auto_detect_solc = true
 
 remappings = [
-  '@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts'
+  '@openzeppelin/=lib/openzeppelin-contracts/',
+  'erc721a/=lib/ERC721A/'
 ]
+
+[rpc_endpoints]
+goerli = "${GOERLI_RPC_URL}"
+
+[etherscan]
+goerli = { key = "${ETHERSCAN_API_KEY}" }
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
