@@ -561,7 +561,7 @@ contract Proposal is Ownable{
         }
         emit GetVotePowerTokenThreshold(threshold);
 
-        return thresholdl
+        return threshold;
 
     }
     
