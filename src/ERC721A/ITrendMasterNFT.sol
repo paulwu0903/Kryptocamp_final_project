@@ -30,5 +30,6 @@ interface ITrendMasterNFT is IERC721A{
         uint256 tokenId
     ) external payable override;
     function approve(address to, uint256 tokenId) external payable override;
+    function getWhitelistMintPrice() external returns(uint256);
 
 }

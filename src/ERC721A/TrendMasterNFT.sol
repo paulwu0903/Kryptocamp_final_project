@@ -58,6 +58,7 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
     event TokenURI(uint256 _tokenId, string uri);
     event Controller (address _controllerAddress);
     event TransferToTreasury(address _treasuryAddress, uint256 _value);
+    event GetWhitelistMintPrice(uint256 _price);
 
     //檢查是否超出最大供給量
     modifier checkOverMaxSupply(uint256 _quentity){
@@ -78,7 +79,7 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
 
     constructor () ERC721A ("TrendMaster", "TM"){
         contractCreateTime = block.timestamp;
-        whitelistMintParam.whitelistMintPrice = 50000000000000000; // 白名單售價0.05E
+        whitelistMintParam.whitelistMintPrice = 500000000000000000; // 白名單售價0.5E
         maxSupply = 1000; //最大供給量
         isOpen = [false, false, false]; //分三批開盲
         openNum = [500, 300,200];
@@ -248,6 +249,12 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
         uint256 balance = balanceOf(_account);
         emit BalanceOf(_account, balance);
         return balance;
+    }
+
+    function getWhitelistMintPrice() external returns(uint256){
+        uint256 price = whitelistMintParam.whitelistMintPrice;
+        emit GetWhitelistMintPrice(price);
+        return price;
     }
 
 
