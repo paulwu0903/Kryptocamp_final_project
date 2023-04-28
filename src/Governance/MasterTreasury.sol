@@ -4,6 +4,7 @@ pragma solidity >=0.8.0;
 import "../Invest/IUniswapV2Invest.sol";
 import "../ERC721A/ITrendMasterNFT.sol";
 import "../Invest/RevenueRewardsSharedByNFTs.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 contract MasterTreasury{
@@ -20,6 +21,8 @@ contract MasterTreasury{
     mapping (address => uint256) investingTokenAmount;
 
     uint256 public treasuryBalance;
+
+    address[] public investments;
     address[] public rewardsContract;
 
     IUniswapV2Invest public uniswapV2Invest;
@@ -48,7 +51,7 @@ contract MasterTreasury{
 
     event AddNewOwner(address _newMember);
     event RemoveOwner(address _member);
-    event SubmitTransaction(address _proposer, TransactionType _txType, address[] _path, uint256 _value, bytes _data);
+    event SubmitTransaction(address _proposer, uint256 _txType, address[] _path, uint256 _value, bytes _data);
     event ConfirmTransaction(address _account, uint256 _txIndex);
     event ExecuteTransaction(address executer, TransactionType _txType, address[] _path, uint256 _value, bytes _data, bool _execute, uint256 _confirmedNum);
     event RevokeTransactionConfirmed(address _revoker, uint256 _txIndex);
@@ -58,6 +61,8 @@ contract MasterTreasury{
     event MasterTreasuryOriginalBalance(uint256 _balance);
     event GetRewardContracts(address[] _contract);
     event GetTxRequireConfirmedNum(uint256 txRequireConfirmedNum);
+    event GetInvestmentAmount(uint256 amount);
+    event GetInvestmentETHValue(uint256 _value);
 
     //判定是否為owner集合
     modifier onlyOwner(){
@@ -149,16 +154,19 @@ contract MasterTreasury{
 
     //發送交易
     function submitTransaction(
-        TransactionType _txType,
+        uint256 _txType,
         address[] memory _path,
         uint256 _value,
         bytes memory _data
     ) external onlyOwner{
         //uint256 txIndex = transactions.length;
+        if (_txType == 1){
+            require(investingTokenAmount[_path[0]] != 0, "have no this investment.");
+        }
 
         transactions.push(
             Transaction({
-                txType: _txType,
+                txType: getTxType(_txType),
                 path: _path,
                 value: _value,
                 data: _data,
@@ -200,12 +208,16 @@ contract MasterTreasury{
         if (transaction.txType == TransactionType.BUY){
             address targetToken = transaction.path[transaction.path.length-1];
             investingETHValue[targetToken] += transaction.value;
-            investingTokenAmount[targetToken] = uniswapV2Invest.getTokenBalance(targetToken);
+            investments.push(targetToken);
             uniswapV2Invest.swapExactETHForTokens{value: transaction.value}(0, transaction.path);
+            investingTokenAmount[targetToken] = uniswapV2Invest.getTokenBalance(targetToken);
         
         }else if(transaction.txType == TransactionType.SALE) {
             address targetToken = transaction.path[0];
             uint256 originalBalance = address(this).balance; //賣幣前ETH
+
+            IERC20(targetToken).approve(address(uniswapV2Invest), investingTokenAmount[targetToken]);
+
             uniswapV2Invest.swapExactTokensForETH(transaction.value, 0, transaction.path);
             uint256 receivedETH = address(this).balance - originalBalance; //賣幣後ETH與賣幣前的差額 = 賣幣拿回的ETH
             uint256 standardETH = (investingETHValue[targetToken] * transaction.value) / investingTokenAmount[targetToken];
@@ -216,6 +228,12 @@ contract MasterTreasury{
                 rewardsContract.push(address(revenueRewardsSharedByNFTs));
             }else{
                 //賠錢賣，暫不做事
+            }
+
+            if (uniswapV2Invest.getTokenBalance(targetToken) == 0){
+                investingTokenAmount[targetToken] =0;
+                investingETHValue[targetToken] =0;
+                removeInvestment(targetToken);
             }
         }
 
@@ -287,6 +305,17 @@ contract MasterTreasury{
         treasuryBalance += _amount;
         emit MasterTreasuryOriginalBalance(treasuryBalance);
     }
+    function getInvestmentAmount(address _tokenAddress) external returns(uint256){
+        uint256 amount = investingTokenAmount[_tokenAddress];
+        emit GetInvestmentAmount(amount);
+        return amount;
+    }
+
+    function getInvestmentETHValue(address _tokenAddress) external returns(uint256){
+        uint256 value = investingETHValue[_tokenAddress];
+        emit GetInvestmentETHValue(value);
+        return value;
+    }
 
     function getRewardContracts() external returns(address[] memory){
         emit GetRewardContracts(rewardsContract);
@@ -295,6 +324,25 @@ contract MasterTreasury{
     function getTxRequireConfirmedNum() external returns(uint256){
         emit GetTxRequireConfirmedNum(txRequireConfirmedNum);
         return txRequireConfirmedNum;
+    }
+
+    function getTxType(uint256 _index) private pure returns(TransactionType txType ){
+        if (_index == 0){
+            txType = TransactionType.BUY;
+        }else if (_index == 1){
+            txType = TransactionType.SALE;
+        }
+    }
+    function removeInvestment(address _target) private {
+        for(uint256 i= 0; i < investments.length; i++){
+            if (investments[i] == _target){
+                delete investments[i];
+                for (uint256 j= i; j < investments.length-1; j++){
+                    investments[j] = investments[j+1];
+                }
+                investments.pop();
+            }
+        }
     }
 
 }
