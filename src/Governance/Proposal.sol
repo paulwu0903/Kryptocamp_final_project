@@ -121,6 +121,7 @@ contract Proposal is Ownable{
     event GetProposalsAmount(uint256 _amount);
     event GetTokenNumThreshold(uint256 _tokenNumThreshold);
     event GetVotePowerThreshold(uint256 _votePowerThreshold);
+    event GetVotePowerTokenThreshold(uint256 _threshold);
 
     constructor(
         address _tokenStakingRewards,
@@ -544,6 +545,24 @@ contract Proposal is Ownable{
         uint256 votePowerThreshold = proposalRule.votePowerThreshold;
         emit GetVotePowerThreshold(votePowerThreshold);
         return votePowerThreshold;
+    }
+    function getVotePowerTokenThreshold(uint256 _level) external returns(uint256){
+        uint256 threshold = 0;
+        if (_level == 0){
+            threshold = proposalVotePowerThreshold.level1;
+        }else if (_level == 1){
+            threshold = proposalVotePowerThreshold.level2;
+        }else if (_level == 2){
+            threshold = proposalVotePowerThreshold.level3;
+        }else if (_level == 3){
+            threshold = proposalVotePowerThreshold.level4;
+        }else if (_level == 4){
+            threshold = proposalVotePowerThreshold.level5;
+        }
+        emit GetVotePowerTokenThreshold(threshold);
+
+        return thresholdl
+
     }
     
 }
