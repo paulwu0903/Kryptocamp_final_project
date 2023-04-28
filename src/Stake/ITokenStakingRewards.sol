@@ -5,7 +5,7 @@ interface ITokenStakingRewards {
 
     function lastTimeRewardApplicable() external view returns (uint);
 
-    function rewardPerToken() external view returns (uint);
+    function rewardPerToken() external returns (uint);
     function stake(uint _amount) external;
 
     function withdraw(uint _amount) external;
