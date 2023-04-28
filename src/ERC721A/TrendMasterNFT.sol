@@ -83,6 +83,7 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
         maxSupply = 1000; //最大供給量
         isOpen = [false, false, false]; //分三批開盲
         openNum = [500, 300,200];
+        whitelistMintParam.whitelistMintLimit = 4;
     }
 
 
@@ -209,7 +210,7 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
     function whitelistMint(bytes32[] calldata _proof, uint256 _quantity) external payable nonReentrant checkOverMaxSupply(_quantity){
         require(verifyWhitelist(_proof), "You're not in whitelist.");
         require(_quantity <= whitelistMintParam.whitelistMintLimit, "Over whitelist mint limit.");
-        require(_quantity * whitelistMintParam.whitelistMintPrice < msg.value, "ETH not enough.");
+        require(_quantity * whitelistMintParam.whitelistMintPrice <= msg.value, "ETH not enough.");
 
         _mint(msg.sender, _quantity);
 
