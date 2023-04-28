@@ -89,7 +89,7 @@ contract NFTStakingRewards{
     function stake(uint _tokenId) external updateReward(msg.sender) {
         require(stakingTokenIdMapping[_tokenId] == address(0), "The Trend Master NFT is already staked.");
         require(stakingNFT.ownerOf(_tokenId) == msg.sender, "The Trend Master NFT is not yours.");
-        stakingNFT.safeTransferFrom(msg.sender, address(this), _tokenId);
+        stakingNFT.transferFrom(msg.sender, address(this), _tokenId);
         balanceOf[msg.sender]++;
         stakingTokenIdMapping[_tokenId] = msg.sender;
         totalSupply++;

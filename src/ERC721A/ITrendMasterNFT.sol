@@ -24,7 +24,7 @@ interface ITrendMasterNFT is IERC721A{
         returns(uint256, uint256, uint256, uint256, uint256, uint256);
     function whitelistMint(bytes32[] calldata _proof, uint256 _quantity) external payable;
     function publicAuctionMint(uint256 _quantity)  external payable;
-    function safeTransferFrom(
+    function transferFrom(
         address from,
         address to,
         uint256 tokenId
