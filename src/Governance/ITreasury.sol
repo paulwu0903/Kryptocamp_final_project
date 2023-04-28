@@ -9,5 +9,5 @@ interface ITreasury{
     function getOwner() external returns(address[] memory);
     function addBalance(uint256 _amount) external;
     function getRewardContracts() external returns(address[] memory);
-    
+    function getTxRequireConfirmedNum() external returns(uint256);
 }

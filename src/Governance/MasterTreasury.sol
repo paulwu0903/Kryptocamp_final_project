@@ -57,6 +57,7 @@ contract MasterTreasury{
     event GetTransaction(TransactionType _txType, address[] _path, uint256 _value, bytes data, bool _executed, uint256 _confirmedNum);
     event MasterTreasuryOriginalBalance(uint256 _balance);
     event GetRewardContracts(address[] _contract);
+    event GetTxRequireConfirmedNum(uint256 txRequireConfirmedNum);
 
     //判定是否為owner集合
     modifier onlyOwner(){
@@ -290,6 +291,10 @@ contract MasterTreasury{
     function getRewardContracts() external returns(address[] memory){
         emit GetRewardContracts(rewardsContract);
         return rewardsContract;
+    }
+    function getTxRequireConfirmedNum() external returns(uint256){
+        emit GetTxRequireConfirmedNum(txRequireConfirmedNum);
+        return txRequireConfirmedNum;
     }
 
 }
