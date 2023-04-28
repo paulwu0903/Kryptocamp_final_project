@@ -167,7 +167,7 @@ contract TrendToken is ERC20Snapshot, Ownable, ReentrancyGuard{
         //執行nft質押代幣分配
         initMint(address(distribution.nftStakeInterest.target), distribution.nftStakeInterest.max_amount);
         //執行公售代幣分配
-        initMint(address(distribution.publicMint.target), distribution.publicMint.max_amount);
+        //initMint(address(distribution.publicMint.target), distribution.publicMint.max_amount);
     }
 
     function getController() external returns (address){
