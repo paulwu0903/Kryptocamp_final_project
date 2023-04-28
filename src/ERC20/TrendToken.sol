@@ -3,17 +3,18 @@ pragma solidity >=0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Snapshot.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "../Governance/ITreasury.sol";
 
-contract TrendToken is ERC20Snapshot, Ownable, ReentrancyGuard{
+contract TrendToken is ERC20Snapshot, ReentrancyGuard{
 
     uint8 public decimals_; //精準度
     uint256 public immutable maxSupply = 1000000000 ether; //最大供給量
     uint256 public tokenPrice; //價格，單位: wei
+
+    mapping (address => bool) isOwner;
 
     //控制合約
     address private controller;
@@ -52,12 +53,18 @@ contract TrendToken is ERC20Snapshot, Ownable, ReentrancyGuard{
         _;
     }
 
+    modifier onlyOwner{
+        require(isOwner[msg.sender], "not a owner");
+        _;
+    }
+
 
     // 建構子初始化參數
     constructor (uint8 _decimals) 
                 ERC20("TrendToken", "TREND"){
         decimals_ = _decimals;
         tokenPrice = 10000 gwei;
+        isOwner[msg.sender] = true;
     }
 
     //設定代幣分配
@@ -204,6 +211,10 @@ contract TrendToken is ERC20Snapshot, Ownable, ReentrancyGuard{
         uint256 balance = balanceOfAt(_account, _snapshotId);
         emit BalanceOfAt(_account, balance, _snapshotId );
         return balance;
+    }
+
+    function addOwner(address _owner) external onlyOwner{
+        isOwner[_owner] = true;
     }
 
     
