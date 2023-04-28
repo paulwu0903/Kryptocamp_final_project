@@ -224,7 +224,7 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
     //公售荷蘭拍
     function publicAuctionMint(uint256 _quantity)  external payable nonReentrant checkOverMaxSupply(_quantity) {
         uint256 price = getAuctionPrice();
-        require(msg.value > _quantity * price, "ETH not enough.");
+        require(msg.value >= _quantity * price, "ETH not enough.");
 
         _mint(msg.sender, _quantity);
 
