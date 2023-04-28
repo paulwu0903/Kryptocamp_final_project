@@ -124,9 +124,11 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
         auction.timeStepNum = _timeStepNum;
     }
     //取得荷蘭拍參數
-    function getAuctionInfo() external returns(Auction memory){
+    function getAuctionInfo() 
+        external 
+        returns(uint256, uint256, uint256, uint256, uint256, uint256){
         emit AuctionInfo(auction.startPrice, auction.endPrice, auction.priceStep, auction.startTime, auction.timeStep, auction.timeStepNum);
-        return auction;
+        return (auction.startPrice, auction.endPrice, auction.priceStep,  auction.startTime, auction.timeStep, auction.timeStepNum);
     }
 
     //取得荷蘭拍當前NFT售價

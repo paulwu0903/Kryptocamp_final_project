@@ -11,4 +11,15 @@ interface ITrendMasterNFT is IERC721A{
     function getTokenURI (uint256 _tokenId) external returns (string memory);
     function getController() external returns (address);
     function setWhitelistMerkleTree(bytes32 _root) external;
+    function setAuction(
+        uint256 _startPrice,
+        uint256 _endPrice,
+        uint256 _priceStep,
+        uint256 _startTime,
+        uint256 _timeStep,
+        uint256 _timeStepNum
+    ) external;
+    function getAuctionInfo() 
+        external 
+        returns(uint256, uint256, uint256, uint256, uint256, uint256);
 }
