@@ -63,7 +63,7 @@ contract CouncilTest is Test {
         MasterTreasury masterTreasuryInstance = new MasterTreasury(owners, address(uniswapV2InvestInstance), address(trendMasterNFTInstance));
         //TokenAirdrop tokenAirdropInstance = new TokenAirdrop(address(trendTokenInstance));
         Council councilInstance = new Council(address(tokenStakingRewardsInstance), address(treasuryInstance), address(masterTreasuryInstance));
-        Proposal proposalInstance = new Proposal(address(tokenStakingRewardsInstance), address(trendMasterNFTInstance), address(treasuryInstance), address(councilInstance));
+        Proposal proposalInstance = new Proposal(address(tokenStakingRewardsInstance), address(trendMasterNFTInstance), address(treasuryInstance), address(masterTreasuryInstance), address(councilInstance));
         
 
         councilInstance.setController(address(proposalInstance));
