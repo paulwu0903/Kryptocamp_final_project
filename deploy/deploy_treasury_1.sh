@@ -1,7 +1,0 @@
-forge create Treasury \
---rpc-url=$RPC_URL \
---private-key=$PRIVATE_KEY \
---constructor-args [0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed,0xaB084bCF2a30B457D71bDE1894de8014619A221A,0x6337c10F0DfcE4f813306f577A04c42132F7dCb2] \
---verify \
---etherscan-api-key $API_KEY
-#0x71e1F5ff5682622f5677a3aa97CED0F18EB77A5d
