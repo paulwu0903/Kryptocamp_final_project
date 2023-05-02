@@ -2,7 +2,6 @@
 pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
-import "../src/SetUp.sol";
 import "../src/ERC20/TrendToken.sol";
 import "../src/Governance/Proposal.sol";
 import "../src/Governance/Treasury.sol";

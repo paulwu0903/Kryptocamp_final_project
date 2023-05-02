@@ -2,7 +2,6 @@
 pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
-import "../src/SetUp.sol";
 import "../src/ERC20/TrendToken.sol";
 import "../src/Governance/Proposal.sol";
 import "../src/Governance/Treasury.sol";
@@ -15,6 +14,7 @@ import "../src/Airdrop/TokenAirdrop.sol";
 import "../src/Airdrop/ITokenAirdrop.sol";
 import "../src/Invest/IUniswapV2Invest.sol";
 import "../src/Invest/UniswapV2Invest.sol";
+import "../src/Governance/IProposal.sol";
 
 contract TrendTokenTest is Test {
 

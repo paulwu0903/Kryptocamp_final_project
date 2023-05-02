@@ -778,4 +778,6 @@ contract Council is Ownable{
     function setMasterTreasuryAddress(address _masterTreasuryAddress) external onlyOwner {
         masterTreasury = IMasterTreasury(_masterTreasuryAddress);
     }
+
+
 }
