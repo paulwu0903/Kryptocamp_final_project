@@ -160,6 +160,8 @@ contract TrendMasterNFTTest is Test {
         vm.stopPrank();
 
         vm.startPrank(0xC0ACE560563cc90b6f4E8CEd54f44d1348f7706d);
+        console.log("tokenURI : ",trendMasterNFT.getTokenURI(0));
+        console.log("Hold NFTs", trendMasterNFT.getTokenURI(trendMasterNFT.tokensOfOwner(0xC0ACE560563cc90b6f4E8CEd54f44d1348f7706d)[3]));
         vm.stopPrank();
     }
 

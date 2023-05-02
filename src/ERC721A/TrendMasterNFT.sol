@@ -185,7 +185,7 @@ contract TrendMasterNFT is ERC721AQueryable, Ownable, ReentrancyGuard{
 
     //設定token URI
     //TODO:return網址尚未完成
-    function tokenURI(uint256 tokenId) public view override(ERC721A) returns (string memory) {
+    function getTokenURI (uint256 tokenId) external returns (string memory){
         require(_exists(tokenId), "ERC721A: invalid token ID");
 
         string memory baseURI = _baseURI();
@@ -199,11 +199,8 @@ contract TrendMasterNFT is ERC721AQueryable, Ownable, ReentrancyGuard{
         }else{
             return bytes(baseURI).length > 0 ? "https://gateway.pinata.cloud/ipfs/QmSy6wJPhTkqZ11UJVgRJDFey9vgw58pn3n6BVkAw83bjJ": "";
         }
-    }
-    
-    function getTokenURI (uint256 _tokenId) external returns (string memory){
-        string memory uri = tokenURI(_tokenId);
-        emit TokenURI(_tokenId, uri);
+        string memory uri = tokenURI(tokenId);
+        emit TokenURI(tokenId, uri);
         return uri;
     }
 
