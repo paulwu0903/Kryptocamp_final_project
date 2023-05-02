@@ -261,5 +261,4 @@ contract TrendMasterNFT is ERC721AQueryable, Ownable, ReentrancyGuard{
     }
 
 
-
 }

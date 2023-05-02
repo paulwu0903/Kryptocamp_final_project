@@ -2,8 +2,9 @@
 pragma solidity >=0.8.0;
 
 import "erc721a/contracts/IERC721A.sol";
+import "erc721a/contracts/extensions/IERC721AQueryable.sol";
 
-interface ITrendMasterNFT is IERC721A{
+interface ITrendMasterNFT is IERC721AQueryable{
     //設定控制者
     function setController(address _controllerAddress) external;
     function transferBalanceToTreasury(address _treasuryAddress) external;
@@ -33,5 +34,7 @@ interface ITrendMasterNFT is IERC721A{
     function getWhitelistMintPrice() external returns(uint256);
     function balanceOf(address owner) external view override returns (uint256);
     function getAuctionPrice() external returns(uint256);
+    function openBlindbox() external;
+
 
 }
