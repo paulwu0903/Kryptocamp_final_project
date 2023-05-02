@@ -345,4 +345,12 @@ contract MasterTreasury{
         }
     }
 
+    function setUniswapInvestAddress(address _uniswapInvestAddress) external onlyOwner {
+        uniswapV2Invest = IUniswapV2Invest(_uniswapInvestAddress);
+    }
+
+    function setTrendMasterAddress(address _trendMasterAddress) external onlyOwner {
+        trendMasterNFT = ITrendMasterNFT(_trendMasterAddress);
+    }
+
 }

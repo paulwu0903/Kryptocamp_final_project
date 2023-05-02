@@ -766,4 +766,16 @@ contract Council is Ownable{
         emit CandidateInfo(candidates);
         return candidates;
     }
+
+    function setTokenStakingRewardsAddress(address _tokenStakingRewardsAddress) external onlyOwner {
+        tokenStakingRewards = ITokenStakingRewards(_tokenStakingRewardsAddress);
+    }
+
+    function setTreasuryAddress(address _treasuryAddress) external onlyOwner {
+        treasury = ITreasury(_treasuryAddress);
+    }
+
+    function setMasterTreasuryAddress(address _masterTreasuryAddress) external onlyOwner {
+        masterTreasury = IMasterTreasury(_masterTreasuryAddress);
+    }
 }

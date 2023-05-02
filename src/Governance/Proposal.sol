@@ -566,5 +566,25 @@ contract Proposal is Ownable{
 
         return threshold;
     }
+
+    function setTokenStakingRewardsAddress(address _tokenStakingRewardsAddress) external onlyOwner{
+        tokenStakingRewards = ITokenStakingRewards(_tokenStakingRewardsAddress);
+    }
+
+    function setTrendMasterAddress(address _trendMasterAddress) external onlyOwner{
+        trendMasterNFT = ITrendMasterNFT(_trendMasterAddress);
+    }
+
+    function setTreasury(address _treasuryAddress) external onlyOwner{
+        treasury = ITreasury(_treasuryAddress);
+    }
+
+    function setMasterTreasury(address _masterTreasury) external onlyOwner{
+        masterTreasury = IMasterTreasury(_masterTreasury);
+    }
+
+    function setCouncilAddress(address _councilAddress) external onlyOwner{
+        council = ICouncil(_councilAddress);
+    }
     
 }

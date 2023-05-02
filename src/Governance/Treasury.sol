@@ -348,4 +348,17 @@ contract Treasury{
         }
     }
 
+    function setUniswapInvestAddress(address _uniswapInvestAddress) external onlyOwner{
+        uniswapV2Invest = IUniswapV2Invest(_uniswapInvestAddress);
+    }
+    function setTrendTokenAddress(address _trendTokenAddress) external onlyOwner{
+        trendToken = ITrendToken(_trendTokenAddress);
+    }
+    function setTokenStakingRewardsAddress(address _tokenStakingRewards) external onlyOwner{
+        tokenStakingRewards = ITokenStakingRewards(_tokenStakingRewards);
+    }
+
+    function setNFTStakingRewardsAddress(address _nftStakingRewards) external onlyOwner{
+        nftStakingRewards = INFTStakingRewards(_nftStakingRewards);
+    }
 }

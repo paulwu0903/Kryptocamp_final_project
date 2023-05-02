@@ -10,7 +10,7 @@ interface ITreasury{
     function addBalance(uint256 _amount) external;
     function getRewardContracts() external returns(address[] memory);
     function getTxRequireConfirmedNum() external returns(uint256);
-     function submitTransaction(
+    function submitTransaction(
         uint256 _txType,
         address[] memory _path,
         uint256 _value,

@@ -43,5 +43,8 @@ contract TokenAirdrop is Ownable{
         emit AirdropToken(msg.sender, rewards);
 
     }
+    function setTrendTokenAddress(address _trendTokenAddress)external onlyOwner{
+        airdropToken = ITrendToken(_trendTokenAddress);
+    } 
 
 }

@@ -1,15 +1,16 @@
 //SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import "erc721a/contracts/ERC721A.sol";
+import "erc721a/contracts/extensions/ERC721AQueryable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-
+import "erc721a/contracts/ERC721A.sol";
+import "erc721a/contracts/IERC721A.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../Governance/IMasterTreasury.sol";
 
-contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
+contract TrendMasterNFT is ERC721AQueryable, Ownable, ReentrancyGuard{
 
     using Strings for uint256;
 
@@ -179,22 +180,22 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
     //設定NFT Base URI
     //TODO:baseURI網址尚未提供
     function _baseURI() internal pure override returns (string memory) {
-        return '';
+        return 'https://gateway.pinata.cloud/ipfs/QmWwaHQ737ZKSh98xgtz6gb7wgyG5EKEXZNGHJxABL552z/';
     }
 
     //設定token URI
     //TODO:return網址尚未完成
-    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+    function tokenURI(uint256 tokenId) public view override(ERC721A) returns (string memory) {
         require(_exists(tokenId), "ERC721A: invalid token ID");
 
         string memory baseURI = _baseURI();
 
         if (isOpen[0] && tokenId < openNum[0]){
-            return bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, "paulNFTMetadata_", tokenId.toString(), ".json")) : "";
+            return bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, tokenId.toString(), ".json")) : "";
         }else if (isOpen[1] && tokenId < (openNum[1] + openNum[0])){
-            return bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, "paulNFTMetadata_", tokenId.toString(), ".json")) : ""; 
+            return bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, tokenId.toString(), ".json")) : ""; 
         }else if (isOpen[2] && tokenId < (openNum[2] + openNum[1] + openNum[0])){
-            return bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, "paulNFTMetadata_", tokenId.toString(), ".json")) : "";
+            return bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, tokenId.toString(), ".json")) : "";
         }else{
             return bytes(baseURI).length > 0 ? "https://gateway.pinata.cloud/ipfs/QmSy6wJPhTkqZ11UJVgRJDFey9vgw58pn3n6BVkAw83bjJ": "";
         }
@@ -258,6 +259,7 @@ contract TrendMasterNFT is ERC721A, Ownable, ReentrancyGuard{
         emit GetWhitelistMintPrice(price);
         return price;
     }
+
 
 
 }

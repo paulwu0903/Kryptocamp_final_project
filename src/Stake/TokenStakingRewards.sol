@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 import "../ERC20/ITrendToken.sol";
 
 contract TokenStakingRewards {
-    ITrendToken public immutable stakingToken;
+    ITrendToken public stakingToken;
 
     uint256 public remainTokens;
 
@@ -163,6 +163,10 @@ contract TokenStakingRewards {
     function getFinishAt() external returns(uint256){
         emit GetFinishAt(finishAt);
         return finishAt;
+    }
+
+    function setTrendTokenAddress(address _trendTokenAddress) external onlyOwner{
+        stakingToken = ITrendToken(_trendTokenAddress);
     }
     
 }

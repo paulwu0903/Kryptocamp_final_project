@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity >=0.8.17;
+pragma solidity >=0.8.0;
 
 import "./ERC20/TrendToken.sol";
 import "./ERC721A/TrendMasterNFT.sol";
@@ -27,6 +27,7 @@ contract SetUp is Ownable{
     
 
     constructor(address[] memory _admins){
+        /*
         TrendToken trendTokenInstance = new TrendToken(18);
         Treasury treasuryInstance = new Treasury(_admins);
         TrendMasterNFT trendMasterNFTInstance = new TrendMasterNFT(address(trendTokenInstance));
@@ -37,26 +38,29 @@ contract SetUp is Ownable{
         trendTokenInstance.setController(address(proposalInstance));
         trendMasterNFTInstance.setController(address(proposalInstance));
 
+        
         trendTokenInstance.setDistribution(
             {
                 _treasury_address: address(treasuryInstance),
-                _treasury_amount: 200000000, 
-                _tokenStakeInterest_amount: 250000000, 
+                _treasury_amount: 200000000 ether, 
+                _tokenStakeInterest_amount: 250000000 ether, 
                 _consultant_address: address(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed), 
-                _consultant_amount: 30000000, 
-                _airdrop_amount: 20000000, 
+                _consultant_amount: 30000000 ether, 
+                _airdrop_amount: 20000000 ether, 
                 _nftStakeInterest_address: address(trendMasterNFTInstance), 
-                _nftStakeInterest_amount: 300000000, 
-                _publicMint_amount: 200000000
+                _nftStakeInterest_amount: 300000000 ether, 
+                _publicMint_amount: 200000000 ether
             });
-
+        
         council = ICouncil(address(councilInstance));
         proposal = IProposal(address(proposalInstance));
         trendToken = ITrendToken(address(trendTokenInstance));
         treasury = ITreasury(address(treasuryInstance));
         trendMasterNFT = ITrendMasterNFT(address(trendMasterNFTInstance));
+        */
     }
 
+    /*
     //競選結算
     function campaignConfirm() external onlyOwner{
         council.campaignConfirm();
@@ -159,4 +163,5 @@ contract SetUp is Ownable{
         emit GetProposal(address(proposal));
         return address(proposal);
     }
+    */
 }
