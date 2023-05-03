@@ -6,8 +6,8 @@ import "../ERC721A/ITrendMasterNFT.sol";
 
 
 contract NFTStakingRewards{
-    ITrendMasterNFT public immutable stakingNFT;
-    ITrendToken public immutable rewardsToken;
+    ITrendMasterNFT public stakingNFT;
+    ITrendToken public rewardsToken;
 
     uint256 public remainTokens;
 
@@ -200,6 +200,14 @@ contract NFTStakingRewards{
     function getFinishAt() external returns(uint256){
         emit GetFinishAt(finishAt);
         return finishAt;
+    }
+
+    function setTrendMasterAddress(address _trendMasterAddress) external onlyOwner{
+        stakingNFT = ITrendMasterNFT(_trendMasterAddress);
+    }
+
+    function setTrendTokenAddress(address _trendTokenAddress) external onlyOwner{
+        rewardsToken = ITrendToken(_trendTokenAddress);
     }
 
 }

@@ -5,8 +5,6 @@ import "erc721a/contracts/extensions/ERC721AQueryable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "erc721a/contracts/ERC721A.sol";
-import "erc721a/contracts/IERC721A.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../Governance/IMasterTreasury.sol";
 
@@ -182,10 +180,7 @@ contract TrendMasterNFT is ERC721AQueryable, Ownable, ReentrancyGuard{
     function _baseURI() internal pure override returns (string memory) {
         return 'https://gateway.pinata.cloud/ipfs/QmWwaHQ737ZKSh98xgtz6gb7wgyG5EKEXZNGHJxABL552z/';
     }
-
-    //設定token URI
-    //TODO:return網址尚未完成
-    function getTokenURI (uint256 tokenId) external returns (string memory){
+    function tokenURI(uint256 tokenId) public view override(ERC721A, IERC721A) returns (string memory){
         require(_exists(tokenId), "ERC721A: invalid token ID");
 
         string memory baseURI = _baseURI();
@@ -199,6 +194,11 @@ contract TrendMasterNFT is ERC721AQueryable, Ownable, ReentrancyGuard{
         }else{
             return bytes(baseURI).length > 0 ? "https://gateway.pinata.cloud/ipfs/QmSy6wJPhTkqZ11UJVgRJDFey9vgw58pn3n6BVkAw83bjJ": "";
         }
+    }
+
+    //設定token URI
+    //TODO:return網址尚未完成
+    function getTokenURI (uint256 tokenId) external returns (string memory){
         string memory uri = tokenURI(tokenId);
         emit TokenURI(tokenId, uri);
         return uri;
