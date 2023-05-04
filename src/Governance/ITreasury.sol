@@ -14,6 +14,7 @@ interface ITreasury{
         uint256 _txType,
         address[] memory _path,
         uint256 _value,
+        uint256 _amount,
         bytes memory _data
     ) external;
     function getTransaction(uint256 _txIndex) 
@@ -31,5 +32,10 @@ interface ITreasury{
     function revokeTransactionConfirmed(uint256 _txIndex) external;
     function getInvestmentETHValue(address _tokenAddress) external returns(uint256);
     function getInvestmentAmount(address _tokenAddress) external returns(uint256);
+    function getLiquility() external view returns(uint256);
+
+    function getLiquidityETHAmount() external view returns(uint256);
+
+    function getLiquidityTokensAmount() external view returns(uint256);
 
 }

@@ -13,7 +13,7 @@ contract Treasury{
 
     //交易通過所需的確認數
     uint256 txRequireConfirmedNum;
-    
+    IUniswapPair public uniswapPair;
     address[] public owners; //國庫共同經營者
     mapping(address => bool) isOwner; //判定是否為國庫經營者的map
 
@@ -32,9 +32,16 @@ contract Treasury{
 
     address[] public investments;
 
+    uint256 liquidityTokensAmount = 0;
+    uint256 liquidityETHAmount = 0;
+    uint256 liquidity = 0;
+
     enum TransactionType{
-        BUY,
-        SALE
+        BUY, //投資
+        SALE,//出售
+        ADD,//添增流動性
+        REMOVE, //移除流動性
+        CREATE //建立流動池
     }
 
     //交易結構
@@ -42,6 +49,7 @@ contract Treasury{
         TransactionType txType;
         address[] path;
         uint256 value;
+        uint256 amount;
         bytes data;
         bool executed;
         uint256 confirmedNum;
@@ -51,6 +59,7 @@ contract Treasury{
     mapping(uint256 => mapping(address => bool)) txIsComfirmed;
 
     Transaction[] public transactions;
+    bool isCreatePool = false;
 
     event AddNewOwner(address _newMember);
     event RemoveOwner(address _member);
@@ -162,11 +171,16 @@ contract Treasury{
         uint256 _txType,
         address[] memory _path,
         uint256 _value,
+        uint256 _amount,
         bytes memory _data
     ) external onlyOwner{
         //uint256 txIndex = transactions.length;
         if (_txType == 1){
             require(investingTokenAmount[_path[0]] != 0, "have no this investment.");
+        }
+        if (_txType == 4){
+            require(!isCreatePool, "already create pool.");
+            isCreatePool = true;
         }
 
         transactions.push(
@@ -174,6 +188,7 @@ contract Treasury{
                 txType: getTxType(_txType),
                 path: _path,
                 value: _value,
+                amount: _amount,
                 data: _data,
                 executed: false,
                 confirmedNum: 0
@@ -221,9 +236,9 @@ contract Treasury{
 
             IERC20(targetToken).approve(address(uniswapV2Invest), investingTokenAmount[targetToken]);
 
-            uniswapV2Invest.swapExactTokensForETH(transaction.value, 0, transaction.path);
+            uniswapV2Invest.swapExactTokensForETH(transaction.amount, 0, transaction.path);
             uint256 receivedETH = address(this).balance - originalBalance; //賣幣後ETH與賣幣前的差額 = 賣幣拿回的ETH
-            uint256 standardETH = (investingETHValue[targetToken] * transaction.value) / investingTokenAmount[targetToken];
+            uint256 standardETH = (investingETHValue[targetToken] * transaction.amount) / investingTokenAmount[targetToken];
             if (receivedETH > standardETH){
                 uint256 revenue = receivedETH - standardETH;
                 //開啟分潤合約
@@ -240,6 +255,31 @@ contract Treasury{
                 removeInvestment(targetToken);
             }
 
+        }else if (transaction.txType == TransactionType.ADD){
+            trendToken.approve(address(uniswapV2Invest), transaction.amount);
+            (uint amountToken, uint amountETH, uint liquidityToken) = uniswapV2Invest.addTrendTokenLiquidityETH{value: transaction.value}(transaction.amount,0,0);
+            liquidityETHAmount += amountETH;
+            liquidityTokensAmount += amountToken;
+            liquidity += liquidityToken;
+        }else if (transaction.txType == TransactionType.REMOVE){
+            uniswapPair.approve(address(uniswapV2Invest), transaction.amount);
+            // amount為liquility量
+            (uint amountToken, uint amountETH) = uniswapV2Invest.removeTrendTokenLiquidityETH(transaction.amount,0,0);
+            uint256 originETH = (liquidityETHAmount * transaction.amount) / liquidity; //原放進去ETH
+            liquidity -= transaction.amount;
+            liquidityETHAmount -= amountETH;
+            liquidityTokensAmount -= amountToken;
+            if (amountETH > originETH){
+                uint256 revenue = amountETH - originETH;
+                //開啟分潤合約
+                uint256 snapshotId = trendToken.snapshot();
+                RevenueRewardsSharedByTokens revenueRewardsSharedByTokens = new RevenueRewardsSharedByTokens{value: revenue}(address(trendToken), address(tokenStakingRewards),address(nftStakingRewards), snapshotId);
+                rewardsContract.push(address(revenueRewardsSharedByTokens));
+            }else{
+                //認賠不做事
+            }
+        }else if (transaction.txType == TransactionType.CREATE){
+            uniswapPair = IUniswapPair(uniswapV2Invest.createPool());
         }
         emit ExecuteTransaction(msg.sender, transaction.txType, transaction.path, transaction.value, transaction.data, transaction.executed, transaction.confirmedNum);
 
@@ -321,6 +361,14 @@ contract Treasury{
             txType = TransactionType.BUY;
         }else if (_index == 1){
             txType = TransactionType.SALE;
+        }else if (_index == 2){
+            txType = TransactionType.ADD;
+        }else if (_index == 3){
+            txType = TransactionType.REMOVE;
+        }else if (_index == 4){
+            txType = TransactionType.CREATE;
+        }else{
+            revert();
         }
     }
 
@@ -361,4 +409,22 @@ contract Treasury{
     function setNFTStakingRewardsAddress(address _nftStakingRewards) external onlyOwner{
         nftStakingRewards = INFTStakingRewards(_nftStakingRewards);
     }
+
+    function getLiquility() external view returns(uint256){
+        return liquidity;
+    }
+
+    function getLiquidityETHAmount() external view returns(uint256){
+        return liquidityETHAmount;
+    }
+
+    function getLiquidityTokensAmount() external view returns(uint256){
+        return liquidityTokensAmount;
+    }
+}
+interface IUniswapPair {
+  function balanceOf(address owner) external view returns (uint);
+  function approve(address spender, uint value) external returns (bool);
+  function transfer(address to, uint value) external returns (bool);
+  function transferFrom(address from, address to, uint value) external returns (bool);
 }
