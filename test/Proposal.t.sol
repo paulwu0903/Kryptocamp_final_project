@@ -53,8 +53,9 @@ contract ProposalTest is Test {
     
     function setUp() public {
         vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
-        UniswapV2Invest uniswapV2InvestInstance = new UniswapV2Invest(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
         TrendToken trendTokenInstance = new TrendToken(18);
+        UniswapV2Invest uniswapV2InvestInstance = new UniswapV2Invest(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D, 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f, address(trendToken));
+        
         TrendMasterNFT trendMasterNFTInstance = new TrendMasterNFT();
         NFTStakingRewards nftStakingRewardsInstance = new NFTStakingRewards(address(trendMasterNFTInstance), address(trendTokenInstance));
         tokenStakingRewardsInstance = new TokenStakingRewards(address(trendTokenInstance));
