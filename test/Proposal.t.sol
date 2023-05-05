@@ -95,10 +95,12 @@ contract ProposalTest is Test {
         treasury = ITreasury(address(treasuryInstance));
         masterTreasury = IMasterTreasury(address(masterTreasuryInstance));
 
-         trendToken.tokenDistribute();
+        trendToken.tokenDistribute();
+        trendToken.openMint();
 
-         tokenStakingRewardsInstance.setRewardsDuration(86400 * 365);
-         tokenStakingRewardsInstance.notifyRewardAmount(250000000 ether);
+
+        tokenStakingRewardsInstance.setRewardsDuration(86400 * 365);
+        tokenStakingRewardsInstance.notifyRewardAmount(250000000 ether);
 
         vm.stopPrank();
     }

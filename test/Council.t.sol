@@ -62,7 +62,7 @@ contract CouncilTest is Test {
 
         Treasury treasuryInstance = new Treasury(owners, address(uniswapV2InvestInstance), address(trendTokenInstance), address(nftStakingRewardsInstance), address(tokenStakingRewardsInstance));
         MasterTreasury masterTreasuryInstance = new MasterTreasury(owners, address(uniswapV2InvestInstance), address(trendMasterNFTInstance));
-        //TokenAirdrop tokenAirdropInstance = new TokenAirdrop(address(trendTokenInstance));
+        TokenAirdrop tokenAirdropInstance = new TokenAirdrop(address(trendTokenInstance));
         Council councilInstance = new Council(address(tokenStakingRewardsInstance), address(treasuryInstance), address(masterTreasuryInstance));
         Proposal proposalInstance = new Proposal(address(tokenStakingRewardsInstance), address(trendMasterNFTInstance), address(treasuryInstance), address(masterTreasuryInstance), address(councilInstance));
         
@@ -81,9 +81,9 @@ contract CouncilTest is Test {
                 _tokenStakeInterestAmount: 250000000 ether, 
                 _consultantAddress: address(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed), 
                 _consultantAmount: 30000000 ether, 
-                _airdropAddress: address(new TokenAirdrop(address(trendTokenInstance))),
+                _airdropAddress: address(new TokenAirdrop(address(tokenAirdropInstance))),
                 _airdropAmount: 20000000 ether, 
-                _nftStakeInterestAddress: address(trendMasterNFTInstance), 
+                _nftStakeInterestAddress: address(nftStakingRewardsInstance), 
                 _nftStakeInterestAmount: 300000000 ether, 
                 _publicMintAmount: 200000000 ether
             });
@@ -94,7 +94,8 @@ contract CouncilTest is Test {
         trendToken = ITrendToken(address(trendTokenInstance));
         treasury = ITreasury(address(treasuryInstance));
 
-         trendToken.tokenDistribute();
+        trendToken.tokenDistribute();
+        trendToken.openMint();
 
          tokenStakingRewardsInstance.setRewardsDuration(86400 * 365);
          tokenStakingRewardsInstance.notifyRewardAmount(250000000 ether);

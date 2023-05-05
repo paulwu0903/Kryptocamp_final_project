@@ -35,6 +35,8 @@ interface ITrendMasterNFT is IERC721AQueryable{
     function balanceOf(address owner) external view override returns (uint256);
     function getAuctionPrice() external returns(uint256);
     function openBlindbox() external;
+    function openWhitelistMint() external;
+    function openAuctionMint() external;
 
 
 }

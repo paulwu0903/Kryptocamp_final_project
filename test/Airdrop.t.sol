@@ -60,7 +60,6 @@ contract AirdropTest is Test {
 
         Treasury treasuryInstance = new Treasury(owners, address(uniswapV2InvestInstance), address(trendTokenInstance), address(nftStakingRewardsInstance), address(tokenStakingRewardsInstance));
         MasterTreasury masterTreasuryInstance = new MasterTreasury(owners, address(uniswapV2InvestInstance), address(trendMasterNFTInstance));
-        //TokenAirdrop tokenAirdropInstance = new TokenAirdrop(address(trendTokenInstance));
         Council councilInstance = new Council(address(tokenStakingRewardsInstance), address(treasuryInstance), address(masterTreasuryInstance));
         Proposal proposalInstance = new Proposal(address(tokenStakingRewardsInstance), address(trendMasterNFTInstance), address(treasuryInstance), address(masterTreasuryInstance), address(councilInstance));
         
@@ -93,9 +92,11 @@ contract AirdropTest is Test {
         tokenAirdrop = ITokenAirdrop(address(tokenAirdropInstance));
 
         trendToken.tokenDistribute();
-
+        trendToken.openMint();
+        
+        tokenAirdrop.openAirdrop();
+        tokenAirdrop.openDonate();
         tokenAirdrop.setWhitelistMerkleTree(0x1b98708867d02869531ce882687f672158fb8735d9ab0a7015f72a2e4ba58275);
-        tokenAirdrop.setWhitelistNum(3);
 
 
         vm.stopPrank();
@@ -103,9 +104,10 @@ contract AirdropTest is Test {
     }
 
     function testAirdrop() public {
-        
+        vm.deal(address(0xC0ACE560563cc90b6f4E8CEd54f44d1348f7706d), 1000 ether);
         vm.startPrank(0xC0ACE560563cc90b6f4E8CEd54f44d1348f7706d);
         assertEq(trendToken.balanceOf(0xC0ACE560563cc90b6f4E8CEd54f44d1348f7706d), 0);
+        tokenAirdrop.donate{value: 1 ether}();
         proof.push(0x6e9ca7916f8579ead90df2fff5311aefbc97fedf2f1a34885a1e8c00d2dfe9a7);
         proof.push(0xd10e0526da6e140592149e8e792c4740d1c1b33a0b596a9e86ac4dc2b1f5abcd);
         tokenAirdrop.getAirdrop(proof);

@@ -107,6 +107,7 @@ contract TrendMasterNFTTest is Test {
         trendMasterNFT = ITrendMasterNFT(address(trendMasterNFTInstance));
 
         trendToken.tokenDistribute();
+        trendToken.openMint();
 
         tokenStakingRewardsInstance.setRewardsDuration(86400 * 365);
         tokenStakingRewardsInstance.notifyRewardAmount(250000000 ether);
@@ -115,6 +116,8 @@ contract TrendMasterNFTTest is Test {
         trendMasterNFT.setWhitelistMerkleTree(0x1b98708867d02869531ce882687f672158fb8735d9ab0a7015f72a2e4ba58275);
         //設定荷蘭拍資訊
         trendMasterNFT.setAuction(3 ether, 1 ether, 10^8 gwei , block.timestamp, 1 minutes, 20);
+        trendMasterNFT.openAuctionMint();
+        trendMasterNFT.openWhitelistMint();
 
         vm.stopPrank();
 

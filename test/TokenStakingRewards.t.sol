@@ -94,10 +94,11 @@ contract TokenStakingRewardsTest is Test {
         trendToken = ITrendToken(address(trendTokenInstance));
         treasury = ITreasury(address(treasuryInstance));
 
-         trendToken.tokenDistribute();
+        trendToken.tokenDistribute();
+        trendToken.openMint();
 
-         tokenStakingRewardsInstance.setRewardsDuration(86400 * 365);
-         tokenStakingRewardsInstance.notifyRewardAmount(250000000 ether);
+        tokenStakingRewardsInstance.setRewardsDuration(86400 * 365);
+        tokenStakingRewardsInstance.notifyRewardAmount(250000000 ether);
 
         vm.stopPrank();
 

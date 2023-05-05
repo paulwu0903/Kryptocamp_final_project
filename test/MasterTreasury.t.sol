@@ -96,7 +96,10 @@ contract MasterTreasuryTest is Test {
 
         trendToken.tokenDistribute();
         
+        trendToken.openMint();
 
+        trendMasterNFT.openAuctionMint();
+        trendMasterNFT.openWhitelistMint();
         //設定merkle tree root
         trendMasterNFT.setWhitelistMerkleTree(0x1b98708867d02869531ce882687f672158fb8735d9ab0a7015f72a2e4ba58275);
         //設定荷蘭拍資訊

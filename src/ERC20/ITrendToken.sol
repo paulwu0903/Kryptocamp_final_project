@@ -16,4 +16,5 @@ interface ITrendToken is IERC20{
     function getController() external returns (address);
     function addOwner(address _owner) external;
     function transfer(address to, uint256 amount) external returns (bool);
+    function openMint() external;
 }

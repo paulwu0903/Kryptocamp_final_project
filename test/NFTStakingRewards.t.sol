@@ -83,6 +83,10 @@ contract NFTStakingRewardsTest is Test {
         trendMasterNFT = ITrendMasterNFT(address(trendMasterNFTInstance));
 
         trendToken.tokenDistribute();
+        trendToken.openMint();
+
+        trendMasterNFT.openAuctionMint();
+        trendMasterNFT.openWhitelistMint();
 
         nftStakingRewardsInstance.setRewardsDuration(86400 * 365);
         nftStakingRewardsInstance.notifyRewardAmount(300000000 ether);

@@ -12,5 +12,8 @@ interface ITokenAirdrop {
     
 
     function getAirdrop(bytes32[] calldata _proof) external;
+    function openAirdrop() external;
+    function openDonate() external;
+    function donate() external payable;
 
 }

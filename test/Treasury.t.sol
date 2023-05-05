@@ -101,182 +101,183 @@ contract TreasuryTest is Test {
         trendToken.addOwner(address(treasury));
 
         trendToken.tokenDistribute();
+        trendToken.openMint();
 
         vm.stopPrank();
     }
 
 
 
-    // function testSubmitTx() public {
-    //     // 將國庫注入資金
-    //     transferBalanceToTreasury();
-    //     // 提交投資交易
-    //     submitBuyTx();
-    //     (,address[] memory pathRes,,,,) = treasury.getTransaction(0);
-    //     assertEq(treasury.getTransactionCount(), 1);
-    //     assertEq(pathRes[0], address(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6));
-    //     submitCreatePoolTx();
-    //     assertEq(treasury.getTransactionCount(), 2);
+    function testSubmitTx() public {
+        // 將國庫注入資金
+        transferBalanceToTreasury();
+        // 提交投資交易
+        submitBuyTx();
+        (,address[] memory pathRes,,,,) = treasury.getTransaction(0);
+        assertEq(treasury.getTransactionCount(), 1);
+        assertEq(pathRes[0], address(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6));
+        submitCreatePoolTx();
+        assertEq(treasury.getTransactionCount(), 2);
 
-    // }
+    }
 
-    // function testConfirmTx() public {
-    //     // 將國庫注入資金
-    //     transferBalanceToTreasury();
-    //     // 提交投資交易
-    //     submitBuyTx();
-    //     confirmTx(0);
-    //     (,,,,,uint256 confirmNum) = treasury.getTransaction(0);
-    //     assertEq(confirmNum, 3);
+    function testConfirmTx() public {
+        // 將國庫注入資金
+        transferBalanceToTreasury();
+        // 提交投資交易
+        submitBuyTx();
+        confirmTx(0);
+        (,,,,,uint256 confirmNum) = treasury.getTransaction(0);
+        assertEq(confirmNum, 3);
 
-    // }
+    }
 
-    // function testRevokeTx() public {
-    //     // 將國庫注入資金
-    //     transferBalanceToTreasury();
-    //     // 提交投資交易
-    //     submitBuyTx();
-    //     confirmTx(0);
-    //     (,,,,,uint256 confirmNum) = treasury.getTransaction(0);
-    //     assertEq(confirmNum, 3);
+    function testRevokeTx() public {
+        // 將國庫注入資金
+        transferBalanceToTreasury();
+        // 提交投資交易
+        submitBuyTx();
+        confirmTx(0);
+        (,,,,,uint256 confirmNum) = treasury.getTransaction(0);
+        assertEq(confirmNum, 3);
 
-    //     vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
-    //     treasury.revokeTransactionConfirmed(0);
-    //     vm.stopPrank();
+        vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
+        treasury.revokeTransactionConfirmed(0);
+        vm.stopPrank();
 
-    //     (,,,,, confirmNum) = treasury.getTransaction(0);
-    //     assertEq(confirmNum, 2);
-    // }
+        (,,,,, confirmNum) = treasury.getTransaction(0);
+        assertEq(confirmNum, 2);
+    }
 
-    // function testExecuteBuyTx() public {
-    //     // 將國庫注入資金
-    //     transferBalanceToTreasury();
-    //     // 提交投資交易
-    //     submitBuyTx();
-    //     //確認交易
-    //     confirmTx(0);
-    //     (,,,,,uint256 confirmNum) = treasury.getTransaction(0);
-    //     assertEq(confirmNum, 3);
+    function testExecuteBuyTx() public {
+        // 將國庫注入資金
+        transferBalanceToTreasury();
+        // 提交投資交易
+        submitBuyTx();
+        //確認交易
+        confirmTx(0);
+        (,,,,,uint256 confirmNum) = treasury.getTransaction(0);
+        assertEq(confirmNum, 3);
 
-    //     (,address[] memory pathRes,,,,) = treasury.getTransaction(0);
-    //     IERC20 targetToken = IERC20(address(pathRes[1]));
-    //     assertTrue(targetToken.balanceOf(address(treasury)) == 0);
+        (,address[] memory pathRes,,,,) = treasury.getTransaction(0);
+        IERC20 targetToken = IERC20(address(pathRes[1]));
+        assertTrue(targetToken.balanceOf(address(treasury)) == 0);
 
-    //     //執行交易
-    //     vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
-    //     treasury.executeTransaction(0);
-    //     vm.stopPrank();
+        //執行交易
+        vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
+        treasury.executeTransaction(0);
+        vm.stopPrank();
 
-    //     //查看持有幣量
-    //     console.log("TargetToken amount :", targetToken.balanceOf(address(treasury)));
-    //     assertTrue(targetToken.balanceOf(address(treasury)) > 0);
-    // }
-    // function testExecuteSaleTx() public {
-    //     // 將國庫注入資金
-    //     transferBalanceToTreasury();
-    //     // 提交投資交易
-    //     submitBuyTx();
-    //     //確認交易
-    //     confirmTx(0);
-    //     (,,,,,uint256 confirmNum) = treasury.getTransaction(0);
-    //     assertEq(confirmNum, 3);
+        //查看持有幣量
+        console.log("TargetToken amount :", targetToken.balanceOf(address(treasury)));
+        assertTrue(targetToken.balanceOf(address(treasury)) > 0);
+    }
+    function testExecuteSaleTx() public {
+        // 將國庫注入資金
+        transferBalanceToTreasury();
+        // 提交投資交易
+        submitBuyTx();
+        //確認交易
+        confirmTx(0);
+        (,,,,,uint256 confirmNum) = treasury.getTransaction(0);
+        assertEq(confirmNum, 3);
 
-    //     (,address[] memory pathRes,,,,) = treasury.getTransaction(0);
-    //     IERC20 targetToken = IERC20(address(pathRes[1]));
-    //     assertTrue(targetToken.balanceOf(address(treasury)) == 0);
+        (,address[] memory pathRes,,,,) = treasury.getTransaction(0);
+        IERC20 targetToken = IERC20(address(pathRes[1]));
+        assertTrue(targetToken.balanceOf(address(treasury)) == 0);
 
-    //     //執行交易
-    //     vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
-    //     treasury.executeTransaction(0);
-    //     vm.stopPrank();
+        //執行交易
+        vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
+        treasury.executeTransaction(0);
+        vm.stopPrank();
 
-    //     //查看持有幣量
-    //     console.log("TargetToken amount :", targetToken.balanceOf(address(treasury)));
-    //     assertTrue(targetToken.balanceOf(address(treasury)) > 0);
-    //     console.log("investing token amount : ", treasury.getInvestmentAmount(address(pathRes[1])));
+        //查看持有幣量
+        console.log("TargetToken amount :", targetToken.balanceOf(address(treasury)));
+        assertTrue(targetToken.balanceOf(address(treasury)) > 0);
+        console.log("investing token amount : ", treasury.getInvestmentAmount(address(pathRes[1])));
 
-    //     // 提交賣出交易
-    //     submitSaleTx();
-    //     confirmTx(1);
-    //     //執行交易
-    //     vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
-    //     treasury.executeTransaction(1);
-    //     vm.stopPrank();
+        // 提交賣出交易
+        submitSaleTx();
+        confirmTx(1);
+        //執行交易
+        vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
+        treasury.executeTransaction(1);
+        vm.stopPrank();
 
-    //     console.log("Reward Contract : ", treasury.getRewardContracts()[0]);
+        console.log("Reward Contract : ", treasury.getRewardContracts()[0]);
 
-    //     IRevenueRewardsSharedByTokens revenueRewardsSharedByTokens = IRevenueRewardsSharedByTokens(treasury.getRewardContracts()[0]);
+        IRevenueRewardsSharedByTokens revenueRewardsSharedByTokens = IRevenueRewardsSharedByTokens(treasury.getRewardContracts()[0]);
         
-    //     assertTrue(address(revenueRewardsSharedByTokens).balance > 0);
+        assertTrue(address(revenueRewardsSharedByTokens).balance > 0);
 
-    //     vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
-    //     uint256 ogBalance = address(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed).balance;
-    //     console.log("Og balance: ", ogBalance);
-    //     revenueRewardsSharedByTokens.getRewards();
-    //     uint256 afterBalance = address(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed).balance;
-    //     console.log("after balance: ", afterBalance);
-    //     assertTrue(afterBalance >= ogBalance);
+        vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
+        uint256 ogBalance = address(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed).balance;
+        console.log("Og balance: ", ogBalance);
+        revenueRewardsSharedByTokens.getRewards();
+        uint256 afterBalance = address(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed).balance;
+        console.log("after balance: ", afterBalance);
+        assertTrue(afterBalance >= ogBalance);
 
-    //     vm.stopPrank();
+        vm.stopPrank();
 
-    // }
+    }
 
-    // function testExecuteCreatePool() public {
-    //     // 將國庫注入資金
-    //     transferBalanceToTreasury();
-    //     // 提交投資交易
-    //     submitCreatePoolTx();
-    //     //確認交易
-    //     confirmTx(0);
-    //     (,,,,,uint256 confirmNum) = treasury.getTransaction(0);
-    //     assertEq(confirmNum, 3);
+    function testExecuteCreatePool() public {
+        // 將國庫注入資金
+        transferBalanceToTreasury();
+        // 提交投資交易
+        submitCreatePoolTx();
+        //確認交易
+        confirmTx(0);
+        (,,,,,uint256 confirmNum) = treasury.getTransaction(0);
+        assertEq(confirmNum, 3);
 
-    //     //執行交易
-    //     vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
-    //     treasury.executeTransaction(0);
-    //     vm.stopPrank();
+        //執行交易
+        vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
+        treasury.executeTransaction(0);
+        vm.stopPrank();
 
-    //     //查看池子是否建立
-    //     console.log("pair address :", uniswapV2Invest.getPairAddress());
-    //     assertTrue(uniswapV2Invest.getPairAddress() != address(0));
-    // }
+        //查看池子是否建立
+        console.log("pair address :", uniswapV2Invest.getPairAddress());
+        assertTrue(uniswapV2Invest.getPairAddress() != address(0));
+    }
 
-    // function testExecuteAddLiquility() public {
-    //     // 將國庫注入資金
-    //     transferBalanceToTreasury();
-    //     // 提交投資交易
-    //     submitCreatePoolTx();
-    //     assertEq(treasury.getTransactionCount(), 1);
+    function testExecuteAddLiquility() public {
+        // 將國庫注入資金
+        transferBalanceToTreasury();
+        // 提交投資交易
+        submitCreatePoolTx();
+        assertEq(treasury.getTransactionCount(), 1);
 
-    //     //確認交易
-    //     confirmTx(0);
-    //     (,,,,,uint256 confirmNum) = treasury.getTransaction(0);
-    //     assertEq(confirmNum, 3);
+        //確認交易
+        confirmTx(0);
+        (,,,,,uint256 confirmNum) = treasury.getTransaction(0);
+        assertEq(confirmNum, 3);
 
-    //     //執行交易
-    //     vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
-    //     treasury.executeTransaction(0);
-    //     vm.stopPrank();
+        //執行交易
+        vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
+        treasury.executeTransaction(0);
+        vm.stopPrank();
 
-    //     //查看池子是否建立
-    //     console.log("pair address :", uniswapV2Invest.getPairAddress());
-    //     assertTrue(uniswapV2Invest.getPairAddress() != address(0));
+        //查看池子是否建立
+        console.log("pair address :", uniswapV2Invest.getPairAddress());
+        assertTrue(uniswapV2Invest.getPairAddress() != address(0));
 
-    //     submitAddLiquilityTx();
-    //     assertEq(treasury.getTransactionCount(), 2);
+        submitAddLiquilityTx();
+        assertEq(treasury.getTransactionCount(), 2);
 
-    //     //確認交易
-    //     confirmTx(1);
-    //     //執行交易
-    //     vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
-    //     treasury.executeTransaction(1);
+        //確認交易
+        confirmTx(1);
+        //執行交易
+        vm.startPrank(0xb8A813833b6032b90a658231E1AA71Da1E7eA2ed);
+        treasury.executeTransaction(1);
 
-    //     assertTrue(treasury.getLiquidityTokensAmount() >0);
-    //     assertTrue(treasury.getLiquility() > 0);
-    //     assertTrue(treasury.getLiquidityETHAmount() > 0);
+        assertTrue(treasury.getLiquidityTokensAmount() >0);
+        assertTrue(treasury.getLiquility() > 0);
+        assertTrue(treasury.getLiquidityETHAmount() > 0);
 
-    //     vm.stopPrank();
-    // }
+        vm.stopPrank();
+    }
 
     function testExecuteRemoveLiquility() public {
         // 將國庫注入資金

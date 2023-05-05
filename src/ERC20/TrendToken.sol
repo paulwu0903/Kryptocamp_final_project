@@ -16,6 +16,8 @@ contract TrendToken is ERC20Snapshot, ReentrancyGuard{
 
     mapping (address => bool) isOwner;
 
+    bool isOpenMint = false;
+
     //控制合約
     address private controller;
 
@@ -110,6 +112,11 @@ contract TrendToken is ERC20Snapshot, ReentrancyGuard{
         distribution.publicMint.max_amount = _publicMintAmount;
         
     } 
+    //設定是否開始公售
+    function openMint() external onlyOwner{
+        require(!isOpenMint, "already open mint.");
+        isOpenMint = true;
+    }
     
     //設定控制者
     function setController(address _controllerAddress) external onlyOwner{
@@ -150,6 +157,7 @@ contract TrendToken is ERC20Snapshot, ReentrancyGuard{
 
     // mint功能，支付ETH購買
     function publicMint(uint256 _amount) external nonReentrant payable{
+        require(isOpenMint, "not open mint.");
         require(msg.value >= tokenPrice * (_amount/ 1e18) , "ETH not enough!!"); //判斷支付費用是否足夠
         require(_amount <= distribution.publicMint.max_amount - distribution.publicMint.current_amount, "Tokens for public Mint are not enough."); //代幣數量是否足夠
         

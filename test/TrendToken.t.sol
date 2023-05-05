@@ -95,6 +95,7 @@ contract TrendTokenTest is Test {
         treasury = ITreasury(address(treasuryInstance));
 
         trendToken.tokenDistribute();
+        trendToken.openMint();
 
         tokenStakingRewardsInstance.setRewardsDuration(86400 * 365);
         tokenStakingRewardsInstance.notifyRewardAmount(250000000 ether);
