@@ -143,16 +143,13 @@
 ## 八、團隊成員與負責事項
 ### 成員介紹與定位
 
-![](https://i.imgur.com/8PK57fa.png =25%x) &nbsp; <span><b>Daniel</b></span> &nbsp;&nbsp;<span>提供技術諮詢、自帶Georli水龍頭功能XDD。</span>
+<img src="https://i.imgur.com/8PK57fa.png" width=25% height=25%>&nbsp; <span><b>Daniel</b></span> &nbsp;&nbsp;<span>提供技術諮詢、自帶Georli水龍頭功能XDD。</span>
 
+<img src="https://i.imgur.com/7gk37mg.png" width=25% height=25%>&nbsp; <span><b>Paul</b></span> &nbsp;&nbsp;<span>負責智能合約主要開發、技術研究、項目規劃</span>
 
-![](https://i.imgur.com/7gk37mg.png =25%x) &nbsp; <span><b>Paul</b></span> &nbsp;&nbsp;<span>負責智能合約主要開發、技術研究、項目規劃</span>
+<img src="https://i.imgur.com/eUF4nmh.png" width=25% height=25%>&nbsp; <span><b>Andrew</b></span> &nbsp;&nbsp;<span>負責技術研究、輔助開發、項目規劃、NFT製圖</span>
 
-
-![](https://i.imgur.com/eUF4nmh.png =25%x) &nbsp; <span><b>Andrew</b></span> &nbsp;&nbsp;<span>負責技術研究、輔助開發、項目規劃、NFT製圖</span>
-
-
-![](https://i.imgur.com/Yslc9A9.png =25%x) &nbsp; <span><b>Steve</b></span> &nbsp;&nbsp;<span>負責前端主要開發、項目規劃、輔助開發智能合約</span>
+<img src="https://i.imgur.com/Yslc9A9.png" width=25% height=25%>&nbsp; <span><b>Steve</b></span> &nbsp;&nbsp;<span>負責前端主要開發、項目規劃、輔助開發智能合約</span>
 
 
 ### 組員專案分工細項
@@ -168,3 +165,4 @@
 * 智能合約：https://github.com/paulwu0903/Kryptocamp_final_project
 * 前端網頁：
 * Demo影片：
+
