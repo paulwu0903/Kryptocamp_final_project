@@ -64,9 +64,9 @@ contract TokenAirdrop is Ownable{
 
     function donate() external payable{
         require(isOpenDonate, "not open donate.");
+        require(whitelistNum < 100, "u are not the top 100 address.");
         require(msg.value == 1 ether, "just 1 ETH!");
         require(isDonate[msg.sender] == false, "already donate");
-        require(whitelistNum < 100, "u are not the top 100 address.");
         whitelistNum++;
         isDonate[msg.sender] = true;
     }
