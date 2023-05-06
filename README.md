@@ -27,7 +27,8 @@
 * 持有Trend Token越多，便有機會從Treasury分到較多的分潤。
 * 預計4年發放完畢所有質押利息。
 * 質押示意圖：
-![](https://i.imgur.com/IPLHTKm.jpg)
+![](https://i.imgur.com/HF1LAcu.jpg)
+
 
 ## 四、鏈上治理
 * Trend DAO的鏈上治理提案階段變化如下：
@@ -141,14 +142,18 @@
 
 ## 八、團隊成員與負責事項
 ### 成員介紹與定位
+
 ![](https://i.imgur.com/8PK57fa.png =25%x) &nbsp; <span><b>Daniel</b></span> &nbsp;&nbsp;<span>提供技術諮詢、自帶Georli水龍頭功能XDD。</span>
 
 
 ![](https://i.imgur.com/7gk37mg.png =25%x) &nbsp; <span><b>Paul</b></span> &nbsp;&nbsp;<span>負責智能合約主要開發、技術研究、項目規劃</span>
 
+
 ![](https://i.imgur.com/eUF4nmh.png =25%x) &nbsp; <span><b>Andrew</b></span> &nbsp;&nbsp;<span>負責技術研究、輔助開發、項目規劃、NFT製圖</span>
 
+
 ![](https://i.imgur.com/Yslc9A9.png =25%x) &nbsp; <span><b>Steve</b></span> &nbsp;&nbsp;<span>負責前端主要開發、項目規劃、輔助開發智能合約</span>
+
 
 ### 組員專案分工細項
 
@@ -163,4 +168,3 @@
 * 智能合約：https://github.com/paulwu0903/Kryptocamp_final_project
 * 前端網頁：
 * Demo影片：
-
