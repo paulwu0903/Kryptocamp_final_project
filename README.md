@@ -12,7 +12,9 @@
 * Trend DAO 是一個去中心化的基金，投資者只要購買Trend Token或Trend Master NFT即可參與項目未來獲利分潤。購買Trend Token將可以分取Treasury收益，而購買Trend Master將可以分取Master Treasury的收益。而收益來源皆來自對Uniswap v2上項目幣的投資或資金池收益。
 
 * 收益圖示：
-![](https://i.imgur.com/Ydw7G5W.jpg)
+
+![](https://hackmd.io/_uploads/ryhUAiNN3.png)
+
 
 <font color = 'blue'>ps: Treasury為中低風險型投資操作，Master Treasury為高風險型投資操作。</font>
 <font color = 'blue'>ps: Treasury和Master Treasury為多簽錢包，owner由理事會成員和項目團隊組成。</font>
@@ -27,12 +29,17 @@
 * 持有Trend Token越多，便有機會從Treasury分到較多的分潤。
 * 預計4年發放完畢所有質押利息。
 * 質押示意圖：
-![](https://i.imgur.com/HF1LAcu.jpg)
+
+![](https://hackmd.io/_uploads/Hy6rAiVE3.png)
+
 
 
 ## 四、鏈上治理
 * Trend DAO的鏈上治理提案階段變化如下：
-![](https://i.imgur.com/diMYxq8.jpg)
+
+![](https://hackmd.io/_uploads/rJ2NRo4Nh.png)
+
+
 * <b>CLOSED:</b> 表示提案被建立，但尚未開啟投票階段。
 * <b>VOTING:</b> 表示有質押Trend Token的持有者可以對提案進行投票。
 * <b>CONFIRMING:</b> 表示進行提案投票力結算。若提案通過門檻，則執行提案內容，並將提案狀態改為EXECUTED，反之，提案遭拒，REJECTED。
@@ -67,7 +74,8 @@
 
 #### 理事會競選活動階段變化如下：
 
-![](https://i.imgur.com/m5m4TZ6.jpg)
+![](https://hackmd.io/_uploads/rkBzAsEV2.png)
+
 
 * <b>CLOSED:</b> 表示理事會競選活動尚未開啟。
 * <b>CANDIDATE_ATTENDING:</b> 表示現階段可讓符合質押Trend Token門檻的holder自願參選。
@@ -78,7 +86,7 @@
 
 #### 理事會罷免活動階段變化如下：
 
-![](https://i.imgur.com/kAliwIr.jpg)
+![](https://hackmd.io/_uploads/SJU70iNEn.png)
 
 * <b>CLOSED:</b> 表示理事會罷免活動尚未開啟。
 * <b>VOTING:</b> 表示有質押Trend Token的holder可以對罷免活動進行投票，有投票就表示同意罷免。
@@ -104,13 +112,17 @@
         * 投資手法：
             * 透過在Uniswap建立Trend Token/WETH流動池，並提供流動性賺取手續費。
             * 投資其他於Uniswap上有潛力的項目幣。
+        * 示意圖：
+        ![](https://hackmd.io/_uploads/HyrLGnEN3.png)
     * Master Treasury: 
         * 運作：
             * 利用參與Trend Master NFT白名單鑄造或荷蘭拍公售的資金來賺取收益，並建立收益合約，按照持有的Trend Master NFT比例進行分潤。
         * 定位：
-            * 高風險
+            * 中高風險
         * 投資手法：
             * 投資其他於Uniswap上有潛力的項目幣。
+        * 示意圖：
+        ![](https://hackmd.io/_uploads/BJGKM2VNn.png)
     
 ## 六、Trend Token 代幣經濟模型
 ### 代幣分配
@@ -137,29 +149,20 @@
 
 ## 七、智能合約互動及重點功能示意圖
 
-![](https://i.imgur.com/ivJIQNo.jpg)
+![](https://hackmd.io/_uploads/Bku0fhNVn.png)
+
 
 
 ## 八、團隊成員與負責事項
 ### 成員介紹與定位
 
-<img src="https://i.imgur.com/8PK57fa.png" width=25% height=25%>&nbsp; <span><b>Daniel</b></span> &nbsp;&nbsp;<span>提供技術諮詢、自帶Georli水龍頭功能XDD。</span>
+<img src="https://i.imgur.com/8PK57fa.png" width=25% height=25%>&nbsp; <span><b>Daniel</b></span> &nbsp;&nbsp;<span>提供技術諮詢、自帶Georli水龍頭功能<3。</span>
 
-<img src="https://i.imgur.com/7gk37mg.png" width=25% height=25%>&nbsp; <span><b>Paul</b></span> &nbsp;&nbsp;<span>負責智能合約主要開發、技術研究、項目規劃</span>
+<img src="https://hackmd.io/_uploads/Sk1Pb34Nh.jpg" width=25% height=25%>&nbsp; <span><b>Paul</b></span> &nbsp;&nbsp;<span>負責智能合約主要開發、技術研究、項目規劃</span>
 
 <img src="https://i.imgur.com/eUF4nmh.png" width=25% height=25%>&nbsp; <span><b>Andrew</b></span> &nbsp;&nbsp;<span>負責技術研究、輔助開發、項目規劃、NFT製圖</span>
 
 <img src="https://i.imgur.com/Yslc9A9.png" width=25% height=25%>&nbsp; <span><b>Steve</b></span> &nbsp;&nbsp;<span>負責前端主要開發、項目規劃、輔助開發智能合約</span>
-
-
-### 組員專案分工細項
-
-<table>
-    <tr><th>名字</th><th>分工</th></tr>
-    <tr><td>Paul</td><td>1. 開發Trend Token合約<br>2. 開發Trend Master合約<br>3. 開發Airdrop合約<br>4. 開發NFT質押合約<br>5. 開發Token質押合約<br>6. 開發Council合約<br>7. 開發Proposal合約<br>8. 開發Uniswap串接合約<br>9. 開發NFT Rewards合約<br>10. 開發Token Revenue合約<br>11. 開發Treasury合約<br>12. 開發Master Treasury合約<br>13. 協助前端串接智能合約 <br>14. 規劃項目內容</td></tr>
-    <tr><td>Andrew</td><td></td></tr>
-    <tr><td>Steve</td><td></td></tr>
-</table>
 
 ## Github
 * 智能合約：https://github.com/paulwu0903/Kryptocamp_final_project
