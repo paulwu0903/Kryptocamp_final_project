@@ -149,8 +149,7 @@
 
 ## 七、智能合約互動及重點功能示意圖
 
-![](https://hackmd.io/_uploads/Bku0fhNVn.png)
-
+![](https://hackmd.io/_uploads/r1szr3V43.png)
 
 
 ## 八、團隊成員與負責事項
