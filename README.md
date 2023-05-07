@@ -163,6 +163,19 @@
 
 <img src="https://i.imgur.com/Yslc9A9.png" width=25% height=25%>&nbsp; <span><b>Steve</b></span> &nbsp;&nbsp;<span>負責前端主要開發、項目規劃、輔助開發智能合約</span>
 
+## Sepolia測試鏈部署：
+* Trend Token: <a href="https://sepolia.etherscan.io/address/0xc60d31c92576c27b0a372220227dc25d52f00a99">0xC60d31c92576C27b0a372220227DC25d52f00a99</a>
+* Trend Master NFT: <a href="https://sepolia.etherscan.io/address/0xee7af071a851ae66e193baf97914c999ef9b31a1">0xeE7Af071a851Ae66e193baF97914C999eF9b31a1</a>
+* Token Staking Rewards:<a href="https://sepolia.etherscan.io/address/0xcf08f672d6dc1704004f79f3cf0a0d438aeda1a6">0xCF08f672D6dC1704004f79f3Cf0a0d438AEda1A6</a>
+* NFT Staking Rewards:<a href="https://sepolia.etherscan.io/address/0x75475565a922c37703f2e2fd79bbe0bf32221703">0x75475565A922c37703f2E2FD79bBE0bf32221703</a>
+* Token Airdrop:<a href="https://sepolia.etherscan.io/address/0xecdc525763ef0d01e67d3c9b24182fd6cd973dfb">0xeCDC525763Ef0D01e67d3c9b24182fd6cD973dFB</a>
+* Proposal:<a href="https://sepolia.etherscan.io/address/0xc62e0e66cd1b320d3cf21cdcc4345cc9a4bbaa0d">0xC62e0e66cD1b320d3CF21CDcc4345CC9a4BBaA0d</a>
+* Council: <a href="https://sepolia.etherscan.io/address/0x7cc7550ed84f05eecdae103cf930c6a6a1f82a98">0x7Cc7550ED84f05EEcdaE103CF930c6A6a1f82A98</a>
+* Treasury:<a href="0x34fc204809bc337c04BAE71528629cD28F702Be7">0x34fc204809bc337c04BAE71528629cD28F702Be7</a>
+* Master Treasury:<a href="https://sepolia.etherscan.io/address/0xa804f7f5cf16088b929c641a20597363489846ed">0xa804F7f5CF16088B929C641a20597363489846Ed</a>
+* Uniswap Invest: <a href="https://sepolia.etherscan.io/address/0x6b85bc63318f177117154ae6b999b4bffbbb59ed">0x6B85Bc63318F177117154Ae6B999B4BffBbb59Ed</a>
+
+
 ## Github
 * 智能合約：https://github.com/paulwu0903/Kryptocamp_final_project
 * 前端網頁：
