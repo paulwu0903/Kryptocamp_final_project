@@ -13,10 +13,10 @@
 
 * 收益圖示：
 
-![](https://hackmd.io/_uploads/ryhUAiNN3.png)
+![](https://hackmd.io/_uploads/Skhv37SVh.png)
 
 
-<font color = 'blue'>ps: Treasury為中低風險型投資操作，Master Treasury為高風險型投資操作。</font>
+<font color = 'blue'>ps: Treasury為中低風險型投資操作，Master Treasury為中高風險型投資操作。</font>
 <font color = 'blue'>ps: Treasury和Master Treasury為多簽錢包，owner由理事會成員和項目團隊組成。</font>
 
 ## 二、項目特色
@@ -180,13 +180,13 @@
 
 <img src="https://hackmd.io/_uploads/Sk1Pb34Nh.jpg" width=25% height=25%>&nbsp; <span><b>Paul</b></span> &nbsp;&nbsp;<span>負責智能合約主要開發、技術研究、項目規劃</span>
 
-<img src="https://i.imgur.com/eUF4nmh.png" width=25% height=25%>&nbsp; <span><b>Andrew</b></span> &nbsp;&nbsp;<span>負責技術研究、輔助開發、項目規劃、NFT製圖</span>
+<img src="https://i.imgur.com/eUF4nmh.png" width=25% height=25%>&nbsp; <span><b>Andrew</b></span> &nbsp;&nbsp;<span>負責技術研究、輔助開發、NFT製圖</span>
 
-<img src="https://i.imgur.com/Yslc9A9.png" width=25% height=25%>&nbsp; <span><b>Steve</b></span> &nbsp;&nbsp;<span>負責前端主要開發、項目規劃、輔助開發智能合約</span>
+<img src="https://i.imgur.com/Yslc9A9.png" width=25% height=25%>&nbsp; <span><b>Steve</b></span> &nbsp;&nbsp;<span>負責前端主要開發、輔助開發智能合約</span>
 
 
 ## Github
 * 智能合約：https://github.com/paulwu0903/Kryptocamp_final_project
-* 前端網頁：
-* Demo影片：
+* 前端網頁：https://github.com/stevecyj/krypto-final
+* Demo影片：https://youtube.com/live/mMLlnPzTrxA
 
