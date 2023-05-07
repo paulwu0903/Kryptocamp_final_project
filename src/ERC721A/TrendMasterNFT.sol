@@ -43,6 +43,7 @@ contract TrendMasterNFT is ERC721AQueryable, Ownable, ReentrancyGuard{
     WhitelistMintParam public whitelistMintParam; //白名單相關參數
     Auction public auction; //荷蘭拍參數
     uint256 private maxSupply; //最大NFTs供給量
+    mapping (address => uint256) whitelistMintNum;
 
     uint256 contractCreateTime;
 
@@ -50,6 +51,7 @@ contract TrendMasterNFT is ERC721AQueryable, Ownable, ReentrancyGuard{
     bool isOpenAuctionMint = false;
 
     uint8 openBlindPhase = 0;
+    
 
     
 
@@ -222,9 +224,9 @@ contract TrendMasterNFT is ERC721AQueryable, Ownable, ReentrancyGuard{
     function whitelistMint(bytes32[] calldata _proof, uint256 _quantity) external payable nonReentrant checkOverMaxSupply(_quantity){
         require(isOpenWhitelistMint, "not open whitelist mint.");
         require(verifyWhitelist(_proof), "You're not in whitelist.");
-        require(_quantity <= whitelistMintParam.whitelistMintLimit, "Over whitelist mint limit.");
+        require(_quantity + whitelistMintNum[msg.sender] <= whitelistMintParam.whitelistMintLimit, "Over whitelist mint limit.");
         require(_quantity * whitelistMintParam.whitelistMintPrice <= msg.value, "ETH not enough.");
-
+        whitelistMintNum[msg.sender] += _quantity;
         _mint(msg.sender, _quantity);
 
         //若多支付，則退還給用戶
