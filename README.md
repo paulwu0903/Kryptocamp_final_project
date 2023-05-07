@@ -151,19 +151,17 @@
 
 ![](https://hackmd.io/_uploads/r1szr3V43.png)
 
+## 八、Roadmap
 
-## 八、團隊成員與負責事項
-### 成員介紹與定位
+* 2023/03 項目規劃、訂定項目大方向
+* 2023/04 項目智能合約開發
+* 2023/05 項目前端開發
+* 2023/05/07 智能合約上Sepolia測試網
+* 2023/05/20 項目初步發表，公布第一版白皮書
+* 2023 Q3 項目程式優化
+* 2023 Q4 串接其他DEX及其他交易平台智能合約
 
-<img src="https://i.imgur.com/8PK57fa.png" width=25% height=25%>&nbsp; <span><b>Daniel</b></span> &nbsp;&nbsp;<span>提供技術諮詢、自帶Georli水龍頭功能<3。</span>
-
-<img src="https://hackmd.io/_uploads/Sk1Pb34Nh.jpg" width=25% height=25%>&nbsp; <span><b>Paul</b></span> &nbsp;&nbsp;<span>負責智能合約主要開發、技術研究、項目規劃</span>
-
-<img src="https://i.imgur.com/eUF4nmh.png" width=25% height=25%>&nbsp; <span><b>Andrew</b></span> &nbsp;&nbsp;<span>負責技術研究、輔助開發、項目規劃、NFT製圖</span>
-
-<img src="https://i.imgur.com/Yslc9A9.png" width=25% height=25%>&nbsp; <span><b>Steve</b></span> &nbsp;&nbsp;<span>負責前端主要開發、項目規劃、輔助開發智能合約</span>
-
-## Sepolia測試鏈部署：
+## 九、Sepolia測試鏈部署：
 * Trend Token: <a href="https://sepolia.etherscan.io/address/0xc60d31c92576c27b0a372220227dc25d52f00a99">0xC60d31c92576C27b0a372220227DC25d52f00a99</a>
 * Trend Master NFT: <a href="https://sepolia.etherscan.io/address/0xee7af071a851ae66e193baf97914c999ef9b31a1">0xeE7Af071a851Ae66e193baF97914C999eF9b31a1</a>
 * Token Staking Rewards:<a href="https://sepolia.etherscan.io/address/0xcf08f672d6dc1704004f79f3cf0a0d438aeda1a6">0xCF08f672D6dC1704004f79f3Cf0a0d438AEda1A6</a>
@@ -174,6 +172,17 @@
 * Treasury:<a href="0x34fc204809bc337c04BAE71528629cD28F702Be7">0x34fc204809bc337c04BAE71528629cD28F702Be7</a>
 * Master Treasury:<a href="https://sepolia.etherscan.io/address/0xa804f7f5cf16088b929c641a20597363489846ed">0xa804F7f5CF16088B929C641a20597363489846Ed</a>
 * Uniswap Invest: <a href="https://sepolia.etherscan.io/address/0x6b85bc63318f177117154ae6b999b4bffbbb59ed">0x6B85Bc63318F177117154Ae6B999B4BffBbb59Ed</a>
+
+## 十、團隊成員與負責事項
+### 成員介紹與定位
+
+<img src="https://i.imgur.com/8PK57fa.png" width=25% height=25%>&nbsp; <span><b>Daniel</b></span> &nbsp;&nbsp;<span>提供技術諮詢、自帶Georli水龍頭功能<3。</span>
+
+<img src="https://hackmd.io/_uploads/Sk1Pb34Nh.jpg" width=25% height=25%>&nbsp; <span><b>Paul</b></span> &nbsp;&nbsp;<span>負責智能合約主要開發、技術研究、項目規劃</span>
+
+<img src="https://i.imgur.com/eUF4nmh.png" width=25% height=25%>&nbsp; <span><b>Andrew</b></span> &nbsp;&nbsp;<span>負責技術研究、輔助開發、項目規劃、NFT製圖</span>
+
+<img src="https://i.imgur.com/Yslc9A9.png" width=25% height=25%>&nbsp; <span><b>Steve</b></span> &nbsp;&nbsp;<span>負責前端主要開發、項目規劃、輔助開發智能合約</span>
 
 
 ## Github
