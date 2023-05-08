@@ -28,6 +28,7 @@ contract TokenStakingRewards {
     uint public totalSupply;
     // User address => staked amount
     mapping(address => uint) public balanceOf;
+    bool isStaking = false;
 
     event GetRemainTokens(uint256 _reaminTokens);
     event GetBalanceOf(address _account, uint256 _balance);
@@ -59,6 +60,10 @@ contract TokenStakingRewards {
 
         _;
     }
+    function openStake() external {
+        require(!isStaking, "already open.");
+        isStaking = true;
+    }
 
     function lastTimeRewardApplicable() public view returns (uint) {
         return _min(finishAt, block.timestamp);
@@ -81,6 +86,7 @@ contract TokenStakingRewards {
     }
 
     function stake(uint _amount) external updateReward(msg.sender) {
+        require(isStaking, "staking not open.");
         require(_amount > 0, "amount = 0");
         stakingToken.transferFrom(msg.sender, address(this), _amount);
         balanceOf[msg.sender] += _amount;

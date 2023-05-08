@@ -22,6 +22,7 @@ interface INFTStakingRewards{
 
     function getBalanceOf(address _addr) external view returns (uint256);
     function getRemainTokens() external returns(uint256);
+    function openStake() external ;
 
     
 
