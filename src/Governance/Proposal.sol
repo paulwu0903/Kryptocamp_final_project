@@ -512,7 +512,9 @@ contract Proposal is Ownable{
             return ProposalType.ADJUST_TREASURY_CONFIRM_NUM_MASTER_THRESHOLD;
         }
     }
-    function getProposalPhaseIndex(uint256 _index) external view returns (uint256 phase){
+
+
+    function getProposalPhaseIndex(uint256 _index) public view returns (uint256 phase){
         if(proposals[_index].proposalPhase == ProposalPhase.CLOSED){
             phase = 0;
         }else if (proposals[_index].proposalPhase == ProposalPhase.VOTING){
@@ -585,6 +587,26 @@ contract Proposal is Ownable{
 
     function setCouncilAddress(address _councilAddress) external onlyOwner{
         council = ICouncil(_councilAddress);
+    }
+
+
+    /*
+    struct Template{
+        ProposalType proposalType;
+        ProposalPhase proposalPhase;
+        address proposer;
+        string title;
+        string desciption;
+        uint256[] paramsUint;
+        address[] paramsAddress;
+        uint256 votePowers;
+        uint256 startTime; 
+    }
+    */
+    
+    function getProposal(uint256 _index) external view returns(Template memory){
+            require(proposals.length <= _index, "There is no the proposal.");
+            return proposals[_index];
     }
     
 }
