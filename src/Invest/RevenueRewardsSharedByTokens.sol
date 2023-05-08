@@ -29,7 +29,7 @@ contract RevenueRewardsSharedByTokens is ReentrancyGuard{
     function getRewards() external nonReentrant {
         require(trendToken.balanceOfAt(msg.sender, snapshotId) != 0, "You don't have any tokens.");
         require(!isReceiveRewards[msg.sender], "already received!");
-        uint256 rewards = (address(this).balance / trendToken.totalSupplyAt(snapshotId) - tokenStakingRewards.getRemainTokens() - nftStakingRewards.getRemainTokens()) * trendToken.balanceOfAt(msg.sender, snapshotId);
+        uint256 rewards = (address(this).balance / trendToken.totalSupplyAt(snapshotId) - tokenStakingRewards.getRemainTokens() - nftStakingRewards.getRemainTokens()) * (trendToken.balanceOfAt(msg.sender, snapshotId)+tokenStakingRewards.getBalanceOf(msg.sender));
         isReceiveRewards[msg.sender] = true;
         payable(msg.sender).transfer(rewards);
 
