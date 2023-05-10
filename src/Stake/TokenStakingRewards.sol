@@ -150,9 +150,8 @@ contract TokenStakingRewards {
         remainTokens = _amount;
     }
 
-    function getBalanceOf(address _addr) external returns (uint256){
+    function getBalanceOf(address _addr) external view returns (uint256){
         uint256 balance = balanceOf[_addr];
-        emit GetBalanceOf(_addr, balance);
         return balance;
     }
 

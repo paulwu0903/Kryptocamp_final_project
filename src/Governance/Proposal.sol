@@ -33,7 +33,7 @@ contract Proposal is Ownable{
 
         //Treasury
         ADJUST_TREASURY_CONFIRM_NUM_THRESHOLD, //設定國庫交易確認門檻
-        ADJUST_TREASURY_CONFIRM_NUM_MASTER_THRESHOLD //設定大師國庫交易確認門檻
+        ADJUST_MASTER_TREASURY_CONFIRM_NUM_THRESHOLD //設定大師國庫交易確認門檻
         
         //NFT
         //ADJUST_TREND_MASTER_DAILY_INTEREST, //調整質押Trend Master每日利息
@@ -232,7 +232,7 @@ contract Proposal is Ownable{
             _proposalType ==  ProposalType.ADJUST_PROPOSAL_VOTE_POWER_THRESHOLD ||
             _proposalType ==  ProposalType.ADJUST_PROPOSAL_TOKEN_NUM_THRESHOLD ||
             _proposalType ==  ProposalType.ADJUST_TREASURY_CONFIRM_NUM_THRESHOLD ||
-            _proposalType ==  ProposalType.ADJUST_TREASURY_CONFIRM_NUM_MASTER_THRESHOLD){
+            _proposalType ==  ProposalType.ADJUST_MASTER_TREASURY_CONFIRM_NUM_THRESHOLD){
             require(_paramsUint.length == 1, "uint array just needs 1 element.");
             require(_paramsAddress.length == 0, "address array is not necessary.");
             _;
@@ -469,7 +469,7 @@ contract Proposal is Ownable{
             );
         }else if (_proposal.proposalType ==  ProposalType.ADJUST_TREASURY_CONFIRM_NUM_THRESHOLD){
             treasury.setTxRequireConfirmedNum(_proposal.paramsUint[0]);
-        }else if (_proposal.proposalType ==  ProposalType.ADJUST_TREASURY_CONFIRM_NUM_MASTER_THRESHOLD){
+        }else if (_proposal.proposalType ==  ProposalType.ADJUST_MASTER_TREASURY_CONFIRM_NUM_THRESHOLD){
             masterTreasury.setTxRequireConfirmedNum(_proposal.paramsUint[0]);
         }
     }    
@@ -509,7 +509,7 @@ contract Proposal is Ownable{
         }else if(_index == 13 ){
             return ProposalType.ADJUST_TREASURY_CONFIRM_NUM_THRESHOLD;
         }else if(_index == 14 ){
-            return ProposalType.ADJUST_TREASURY_CONFIRM_NUM_MASTER_THRESHOLD;
+            return ProposalType.ADJUST_MASTER_TREASURY_CONFIRM_NUM_THRESHOLD;
         }
     }
 
@@ -588,25 +588,9 @@ contract Proposal is Ownable{
     function setCouncilAddress(address _councilAddress) external onlyOwner{
         council = ICouncil(_councilAddress);
     }
-
-
-    /*
-    struct Template{
-        ProposalType proposalType;
-        ProposalPhase proposalPhase;
-        address proposer;
-        string title;
-        string desciption;
-        uint256[] paramsUint;
-        address[] paramsAddress;
-        uint256 votePowers;
-        uint256 startTime; 
-    }
-    */
     
-    function getProposal(uint256 _index) external view returns(Template memory){
-            require(proposals.length <= _index, "There is no the proposal.");
-            return proposals[_index];
+    function getAllProposal() external view returns(Template[] memory){
+        return proposals;
     }
     
 }

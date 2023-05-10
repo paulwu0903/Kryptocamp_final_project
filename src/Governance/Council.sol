@@ -655,7 +655,7 @@ contract Council is Ownable{
         return controller;
     }
 
-    function getCampaignPhase() external returns(uint256){
+    function getCampaignPhase() external view returns(uint256){
         uint256 phase = 0;
         if (campaign.campaignPhase == CampaignPhase.CLOSED){
             phase = 0;
@@ -666,7 +666,6 @@ contract Council is Ownable{
         }else if (campaign.campaignPhase == CampaignPhase.CONFIRMING){
             phase = 3;
         }
-        emit CampaignCurrentPhase(phase);
         return phase;
     }
 

@@ -6,9 +6,9 @@ interface IMasterTreasury{
     function addOwner(address _newMember) external;
     function removeOwner(address _removeMember) external;
     function setTxRequireConfirmedNum(uint256 _threshold) external;
-    function getOwner() external returns(address[] memory);
+    function getOwner() external view returns(address[] memory);
     function addBalance(uint256 _amount) external;
-    function getTxRequireConfirmedNum() external returns(uint256);
+    function getTxRequireConfirmedNum() external view returns(uint256);
 
     function submitTransaction(
         uint256 _txType,
@@ -17,7 +17,8 @@ interface IMasterTreasury{
         bytes memory _data
     ) external;
     function getTransaction(uint256 _txIndex) 
-        external  
+        external
+        view  
         returns(
             uint256 txType,
             address[] memory path,
@@ -27,11 +28,11 @@ interface IMasterTreasury{
             uint256 confirmedNum);
     function confirmTransaction(uint256 _txIndex) external;
     function executeTransaction(uint256 _txIndex) external;
-    function getTransactionCount() external returns(uint256);
+    function getTransactionCount() external view returns(uint256);
     function revokeTransactionConfirmed(uint256 _txIndex) external;
-    function getInvestmentETHValue(address _tokenAddress) external returns(uint256);
-    function getInvestmentAmount(address _tokenAddress) external returns(uint256);
-    function getRewardContracts() external returns(address[] memory);
+    function getInvestmentETHValue(address _tokenAddress) external view returns(uint256);
+    function getInvestmentAmount(address _tokenAddress) external view returns(uint256);
+    function getRewardContracts() external view returns(address[] memory);
 
     
 }

@@ -96,7 +96,7 @@ contract TrendTokenTest is Test {
 
         trendToken.tokenDistribute();
         trendToken.openMint();
-
+        tokenStakingRewardsInstance.openStake();
         tokenStakingRewardsInstance.setRewardsDuration(86400 * 365);
         tokenStakingRewardsInstance.notifyRewardAmount(250000000 ether);
 

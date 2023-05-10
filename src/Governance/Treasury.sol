@@ -301,22 +301,21 @@ contract Treasury{
     }
 
     //取得owner集合
-    function getOwner() external returns(address[] memory){
-        emit GetOwner(owners);
+    function getOwner() external view returns(address[] memory){
         return owners;
     }
 
 
     //取得交易數量
-    function getTransactionCount() external returns(uint256){
+    function getTransactionCount() external view returns(uint256){
         uint256 amount = transactions.length;
-        emit GetTransactionCount(amount);
         return amount;
     }
 
     //取得交易資訊
     function getTransaction(uint256 _txIndex) 
-        external  
+        external 
+        view 
         returns(
             uint256 txType,
             address[] memory path,
@@ -327,7 +326,6 @@ contract Treasury{
             )
     {
         Transaction storage transaction = transactions[_txIndex];
-        emit GetTransaction(transaction.txType, transaction.path, transaction.value, transaction.data, transaction.executed, transaction.confirmedNum);
 
 
         return (
@@ -346,13 +344,11 @@ contract Treasury{
         emit TreasuryOriginalBalance(treasuryBalance);
     }
 
-    function getRewardContracts() external returns(address[] memory){
-        emit GetRewardContracts(rewardsContract);
+    function getRewardContracts() external view returns(address[] memory){
         return rewardsContract;
     }
 
-    function getTxRequireConfirmedNum() external returns(uint256){
-        emit GetTxRequireConfirmedNum(txRequireConfirmedNum);
+    function getTxRequireConfirmedNum() external view returns(uint256){
         return txRequireConfirmedNum;
     }
 
@@ -372,15 +368,13 @@ contract Treasury{
         }
     }
 
-    function getInvestmentAmount(address _tokenAddress) external returns(uint256){
+    function getInvestmentAmount(address _tokenAddress) external view  returns(uint256){
         uint256 amount = investingTokenAmount[_tokenAddress];
-        emit GetInvestmentAmount(amount);
         return amount;
     }
 
-    function getInvestmentETHValue(address _tokenAddress) external returns(uint256){
+    function getInvestmentETHValue(address _tokenAddress) external view returns(uint256){
         uint256 value = investingETHValue[_tokenAddress];
-        emit GetInvestmentETHValue(value);
         return value;
     }
 
@@ -420,6 +414,10 @@ contract Treasury{
 
     function getLiquidityTokensAmount() external view returns(uint256){
         return liquidityTokensAmount;
+    }
+
+    function getAllTransactions() external view returns (Transaction[] memory){
+        return transactions;
     }
 }
 interface IUniswapPair {

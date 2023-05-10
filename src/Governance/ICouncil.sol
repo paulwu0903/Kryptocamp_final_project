@@ -18,7 +18,7 @@ interface ICouncil{
     function setCampaignDuration(uint256 _closeToAttend, uint256 _attendToVote, uint256 _voteToConfirm) external;
     function setRecallDuration(uint256 _closeToVote, uint256 _voteToConfirm) external;
     function getController() external returns (address);
-    function getCampaignPhase() external returns(uint256 phase);
+    function getCampaignPhase() external view returns(uint256 phase);
     function getCampaignStartTime() external returns(uint256 time);
     function participate(string memory _name, string memory _politicalBriefing) external;
     function getCandidateNum() external returns(uint256);
