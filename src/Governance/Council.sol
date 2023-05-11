@@ -650,8 +650,7 @@ contract Council is Ownable{
         confirms = _candidates;
     } 
 
-    function getController() external returns (address){
-        emit Controller(controller);
+    function getController() external view returns (address){
         return controller;
     }
 
@@ -669,7 +668,7 @@ contract Council is Ownable{
         return phase;
     }
 
-    function getRecallPhase() external returns(uint256){
+    function getRecallPhase() external view returns(uint256){
         uint256 phase = 0;
         if (recallActivity.recallPhase == RecallPhase.CLOSED){
             phase = 0;
@@ -678,55 +677,47 @@ contract Council is Ownable{
         }else if (recallActivity.recallPhase == RecallPhase.CONFIRMING){
             phase = 2;
         }
-        emit RecallCurrentPhase(phase);
         return phase;
     }
 
-    function getCampaignStartTime() external returns(uint256 time){
+    function getCampaignStartTime() external view returns(uint256 time){
         uint256 startTime = campaign.startTime;
-        emit CampaignStartTime(startTime);
         return startTime;
     }
 
-    function getCandidateNum() external returns(uint256){
+    function getCandidateNum() external view returns(uint256){
         uint256 candidateNum = candidates.length;
-        emit CandidateNum(candidateNum);
         return candidateNum;
     }
 
-    function getVotersNum() external returns(uint256){
+    function getVotersNum() external view returns(uint256){
         uint256 voterNum = voters.length;
-        emit VoterNum(voterNum);
         return voterNum;
     }
 
-    function getMembersNum() external returns (uint256){
+    function getMembersNum() external view returns (uint256){
         uint256 amount = members.length;
-        emit MemberNum(amount);
         return amount;
     }
     //取得參與理事會競選持幣門檻
-    function getTokenNumThreshold() external returns(uint256){
+    function getTokenNumThreshold() external view returns(uint256){
         uint256 threshold = rule.tokenNumThreshold;
-        emit TokenNumThreshold(threshold);
         return threshold;
     }
     //取得參與投票力門檻
-    function getVotePowerThreshold() external returns (uint256){
+    function getVotePowerThreshold() external view returns (uint256){
         uint256 threshold = rule.votePowerThreshold;
-        emit VotePowerThreshold(threshold);
         return threshold;
     }
 
     //取得理事會上限人數
-    function getCouncilMemberNumLimit() external returns(uint256){
+    function getCouncilMemberNumLimit() external view returns(uint256){
         uint256 limit = rule.memberNumLimit;
-        emit MemberNumLimit(limit);
         return limit;
     }
 
     //取得vote power規範所需質押之幣量
-    function getLevelOfVotePower(uint256 _index) external returns(uint256){
+    function getLevelOfVotePower(uint256 _index) external view returns(uint256){
         uint256 res = 0;
         if (_index == 0){
             res = votePowerTokenThreshold.level1;
@@ -739,30 +730,26 @@ contract Council is Ownable{
         }else if (_index == 4 ){
             res = votePowerTokenThreshold.level5;
         }
-        emit LevelOfVotePower(_index, res);
         return res;
     }
 
-    function getVotePassThreshold() external returns(uint256){
+    function getVotePassThreshold() external view returns(uint256){
         uint256 threshold = rule.passVoteNumThreshold;
-        emit VotePassThreshold(threshold);
         return threshold;
     }
 
-    function getCurrentActiviry() external returns(uint256){
+    function getCurrentActiviry() external view returns(uint256){
         uint256 activity = 0;
         if (campaign.campaignPhase != CampaignPhase.CLOSED){
             activity = 1;
         }else if (recallActivity.recallPhase != RecallPhase.CLOSED){
             activity = 2;
         }
-        emit ActivityInfo(activity);
         return activity;
     }
 
     //取得候選人資訊 
-    function getCandidate() external returns(Candidate[] memory){
-        emit CandidateInfo(candidates);
+    function getCandidate() external view returns(Candidate[] memory){
         return candidates;
     }
 

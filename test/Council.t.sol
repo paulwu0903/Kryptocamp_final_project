@@ -529,7 +529,6 @@ contract CouncilTest is Test {
         council.changeRecallToConfirming();
         vm.stopPrank();
         assertEq(council.getRecallPhase(), 2);
-
     }
 
     // 候選人參選

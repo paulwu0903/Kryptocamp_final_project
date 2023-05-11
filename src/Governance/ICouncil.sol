@@ -19,21 +19,21 @@ interface ICouncil{
     function setRecallDuration(uint256 _closeToVote, uint256 _voteToConfirm) external;
     function getController() external returns (address);
     function getCampaignPhase() external view returns(uint256 phase);
-    function getCampaignStartTime() external returns(uint256 time);
+    function getCampaignStartTime() external view returns(uint256 time);
     function participate(string memory _name, string memory _politicalBriefing) external;
-    function getCandidateNum() external returns(uint256);
+    function getCandidateNum() external view returns(uint256);
     function getRemainVotePower(address _addr) external returns(uint256);
     function campaignVote(uint8 _candidateindex, uint256 _votePower) external;
-    function getVotersNum() external returns(uint256);
+    function getVotersNum() external view returns(uint256);
     function campaignConfirm() external;
-    function getRecallPhase() external returns(uint256 phase);
+    function getRecallPhase() external view returns(uint256 phase);
     function recallVote(uint256 _votePower) external;
     function recallConfirm() external;
-    function getMembersNum() external returns (uint256);
-    function getTokenNumThreshold() external returns(uint256);
-    function getVotePowerThreshold() external returns (uint256);
-    function getCouncilMemberNumLimit() external returns(uint256);
-    function getLevelOfVotePower(uint256 _index) external returns(uint256);
-    function getVotePassThreshold() external returns(uint256);
+    function getMembersNum() external view returns (uint256);
+    function getTokenNumThreshold() external view returns(uint256);
+    function getVotePowerThreshold() external view returns (uint256);
+    function getCouncilMemberNumLimit() external view returns(uint256);
+    function getLevelOfVotePower(uint256 _index) external view returns(uint256);
+    function getVotePassThreshold() external view returns(uint256);
     
 }

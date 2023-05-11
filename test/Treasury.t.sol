@@ -97,7 +97,7 @@ contract TreasuryTest is Test {
         proposal = IProposal(address(proposalInstance));
         trendToken = ITrendToken(address(trendTokenInstance));
         treasury = ITreasury(address(treasuryInstance));
-
+        //這段容易忘記
         trendToken.addOwner(address(treasury));
 
         trendToken.tokenDistribute();
