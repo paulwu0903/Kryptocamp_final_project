@@ -137,6 +137,7 @@ contract MasterTreasury{
                 break;
             }
         }
+        isOwner[_removeMember] = false;
         txRequireConfirmedNum = (owners.length /2) +1;
 
         emit RemoveOwner(_removeMember);
