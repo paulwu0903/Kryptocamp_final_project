@@ -143,13 +143,13 @@ contract TrendMasterNFT is ERC721AQueryable, Ownable, ReentrancyGuard{
     //取得荷蘭拍參數
     function getAuctionInfo() 
         external 
+        view
         returns(uint256, uint256, uint256, uint256, uint256, uint256){
-        emit AuctionInfo(auction.startPrice, auction.endPrice, auction.priceStep, auction.startTime, auction.timeStep, auction.timeStepNum);
         return (auction.startPrice, auction.endPrice, auction.priceStep,  auction.startTime, auction.timeStep, auction.timeStepNum);
     }
 
     //取得荷蘭拍當前NFT售價
-    function getAuctionPrice() public returns(uint256){
+    function getAuctionPrice() public view returns(uint256){
 
         if (block.timestamp <= auction.startTime){
             return auction.startPrice;
@@ -163,9 +163,6 @@ contract TrendMasterNFT is ERC721AQueryable, Ownable, ReentrancyGuard{
 
         uint256 price = auction.startPrice >= auction.priceStep * steps?
          auction.startPrice - (auction.priceStep * steps) : auction.endPrice;
-
-        emit AuctionPrice(price);
-
       return price;
     } 
 
@@ -177,8 +174,7 @@ contract TrendMasterNFT is ERC721AQueryable, Ownable, ReentrancyGuard{
     }
 
     //查詢盲盒狀態
-    function getBlindboxPhase() external returns(uint256){
-        emit BlindboxPhrase(openBlindPhase);
+    function getBlindboxPhase() external view returns(uint256){
         return openBlindPhase;
     }
 
@@ -214,9 +210,8 @@ contract TrendMasterNFT is ERC721AQueryable, Ownable, ReentrancyGuard{
 
     //設定token URI
     //TODO:return網址尚未完成
-    function getTokenURI (uint256 tokenId) external returns (string memory){
+    function getTokenURI (uint256 tokenId) external view returns (string memory){
         string memory uri = tokenURI(tokenId);
-        emit TokenURI(tokenId, uri);
         return uri;
     }
 
@@ -250,8 +245,7 @@ contract TrendMasterNFT is ERC721AQueryable, Ownable, ReentrancyGuard{
         emit PublicMint(msg.sender, price , _quantity);
     }
 
-    function getController() external returns (address){
-        emit Controller(controller);
+    function getController() external view returns (address){
         return controller;
     }
 
@@ -263,15 +257,13 @@ contract TrendMasterNFT is ERC721AQueryable, Ownable, ReentrancyGuard{
         emit TransferToTreasury(_treasuryAddress, address(this).balance);
     }
 
-    function getBalanceOf(address _account) external returns(uint256){
+    function getBalanceOf(address _account) external view returns(uint256){
         uint256 balance = balanceOf(_account);
-        emit BalanceOf(_account, balance);
         return balance;
     }
 
-    function getWhitelistMintPrice() external returns(uint256){
+    function getWhitelistMintPrice() external view returns(uint256){
         uint256 price = whitelistMintParam.whitelistMintPrice;
-        emit GetWhitelistMintPrice(price);
         return price;
     }
 

@@ -134,15 +134,13 @@ contract TrendToken is ERC20Snapshot, ReentrancyGuard{
     }
 
     //取得最大供給量
-    function getMaxSupply() external returns(uint256){
-        emit TokenMaxSupply(maxSupply);
+    function getMaxSupply() external pure returns(uint256){
         return maxSupply;
     }
 
     //取得總供給量
-    function getTotalSupply() external returns(uint256){
+    function getTotalSupply() external view returns(uint256){
         uint256 tokenTotalSupply = totalSupply();
-        emit TokenTotalSupply(tokenTotalSupply);
         return tokenTotalSupply;
     }
 
@@ -185,8 +183,7 @@ contract TrendToken is ERC20Snapshot, ReentrancyGuard{
         //initMint(address(distribution.publicMint.target), distribution.publicMint.max_amount);
     }
 
-    function getController() external returns (address){
-        emit Controller(controller);
+    function getController() external view returns (address){
         return controller;
     }
 
@@ -204,9 +201,7 @@ contract TrendToken is ERC20Snapshot, ReentrancyGuard{
         snapshotId = _snapshot();
     }
 
-    function getBalance(address _account) external returns (uint256){
-        uint256 balance = balanceOf(_account);
-        emit Balance(_account, balance);
+    function getBalance(address _account) external view returns (uint256){
         return balanceOf(_account);
     }
 
@@ -215,9 +210,8 @@ contract TrendToken is ERC20Snapshot, ReentrancyGuard{
         super._beforeTokenTransfer(from, to, amount);
     }
 
-    function getBalanceOfAt(address _account, uint256 _snapshotId) external returns(uint256){
+    function getBalanceOfAt(address _account, uint256 _snapshotId) external view returns(uint256){
         uint256 balance = balanceOfAt(_account, _snapshotId);
-        emit BalanceOfAt(_account, balance, _snapshotId );
         return balance;
     }
 

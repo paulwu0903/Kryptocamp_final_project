@@ -33,6 +33,7 @@ interface IMasterTreasury{
     function getInvestmentETHValue(address _tokenAddress) external view returns(uint256);
     function getInvestmentAmount(address _tokenAddress) external view returns(uint256);
     function getRewardContracts() external view returns(address[] memory);
+    function getInvestments() external view returns(address[] memory);
 
     
 }

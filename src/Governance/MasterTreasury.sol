@@ -350,5 +350,9 @@ contract MasterTreasury{
     function getAllTransactions() external view returns (Transaction[] memory){
         return transactions;
     }
+    
+    function getInvestments() external view returns(address[] memory){
+        return investments;
+    }
 
 }

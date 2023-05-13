@@ -38,5 +38,6 @@ interface ITreasury{
     function getLiquidityETHAmount() external view returns(uint256);
 
     function getLiquidityTokensAmount() external view returns(uint256);
+    function getInvestments() external view returns(address[] memory);
 
 }

@@ -10,10 +10,10 @@ interface ITrendToken is IERC20{
     function balanceOfAt(address account, uint256 snapshotId) external view returns (uint256);
     function snapshot() external returns(uint256 snapshotId);
     function totalSupplyAt(uint256 snapshotId) external view returns(uint256);
-    function getBalance(address _account) external returns (uint256);
-    function getBalanceOfAt(address _account, uint256 _snapshotId) external returns(uint256);
-    function getTotalSupply() external returns(uint256);
-    function getController() external returns (address);
+    function getBalance(address _account) external view returns (uint256);
+    function getBalanceOfAt(address _account, uint256 _snapshotId) external view returns(uint256);
+    function getTotalSupply() external view returns(uint256);
+    function getController() external view returns (address);
     function addOwner(address _owner) external;
     function transfer(address to, uint256 amount) external returns (bool);
     function openMint() external;

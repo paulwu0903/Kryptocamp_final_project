@@ -9,8 +9,8 @@ interface ITrendMasterNFT is IERC721AQueryable{
     function setController(address _controllerAddress) external;
     function transferBalanceToTreasury(address _treasuryAddress) external;
     function totalSupply() external view override returns (uint256);
-    function getTokenURI (uint256 _tokenId) external returns (string memory);
-    function getController() external returns (address);
+    function getTokenURI (uint256 _tokenId) external view returns (string memory);
+    function getController() external view returns (address);
     function setWhitelistMerkleTree(bytes32 _root) external;
     function setAuction(
         uint256 _startPrice,
@@ -21,7 +21,8 @@ interface ITrendMasterNFT is IERC721AQueryable{
         uint256 _timeStepNum
     ) external;
     function getAuctionInfo() 
-        external 
+        external
+        view 
         returns(uint256, uint256, uint256, uint256, uint256, uint256);
     function whitelistMint(bytes32[] calldata _proof, uint256 _quantity) external payable;
     function publicAuctionMint(uint256 _quantity)  external payable;
@@ -31,9 +32,9 @@ interface ITrendMasterNFT is IERC721AQueryable{
         uint256 tokenId
     ) external payable override;
     function approve(address to, uint256 tokenId) external payable override;
-    function getWhitelistMintPrice() external returns(uint256);
+    function getWhitelistMintPrice() external view returns(uint256);
     function balanceOf(address owner) external view override returns (uint256);
-    function getAuctionPrice() external returns(uint256);
+    function getAuctionPrice() external view returns(uint256);
     function openBlindbox() external;
     function openWhitelistMint() external;
     function openAuctionMint() external;
