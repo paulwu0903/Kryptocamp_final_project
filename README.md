@@ -178,11 +178,11 @@
 
 <img src="https://i.imgur.com/8PK57fa.png" width=25% height=25%>&nbsp; <span><b>Daniel</b></span> &nbsp;&nbsp;<span>提供技術諮詢、自帶Georli水龍頭功能<3。</span>
 
-<img src="https://hackmd.io/_uploads/Sk1Pb34Nh.jpg" width=25% height=25%>&nbsp; <span><b>Paul</b></span> &nbsp;&nbsp;<span>負責智能合約主要開發、技術研究、項目規劃</span>
+<img src="https://hackmd.io/_uploads/Sk1Pb34Nh.jpg" width=25% height=25%>&nbsp; <span><b>Paul</b></span> &nbsp;&nbsp;<span>智能合約開發、前端治理功能、項目規劃</span>
 
-<img src="https://i.imgur.com/eUF4nmh.png" width=25% height=25%>&nbsp; <span><b>Andrew</b></span> &nbsp;&nbsp;<span>負責技術研究、輔助開發、NFT製圖</span>
+<img src="https://i.imgur.com/eUF4nmh.png" width=25% height=25%>&nbsp; <span><b>Andrew</b></span> &nbsp;&nbsp;<span>智能合約輔助開發、前端空投功能、NFT製圖</span>
 
-<img src="https://i.imgur.com/Yslc9A9.png" width=25% height=25%>&nbsp; <span><b>Steve</b></span> &nbsp;&nbsp;<span>負責前端主要開發、輔助開發智能合約</span>
+<img src="https://i.imgur.com/Yslc9A9.png" width=25% height=25%>&nbsp; <span><b>Steve</b></span> &nbsp;&nbsp;<span>前端Token/NFT、質押功能</span>
 
 
 ## Github
