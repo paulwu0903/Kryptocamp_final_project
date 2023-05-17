@@ -28,6 +28,8 @@ contract NFTStakingRewards{
     // User address => rewards to be claimed
     mapping(address => uint) public rewards;
 
+    mapping (address => uint256[]) ownerOfNfts; 
+
     // Total staked
     uint public totalSupply;
     // User address => staked amount
@@ -97,6 +99,7 @@ contract NFTStakingRewards{
         require(isStaking, "staking not open.");
         require(stakingTokenIdMapping[_tokenId] == address(0), "The Trend Master NFT is already staked.");
         require(stakingNFT.ownerOf(_tokenId) == msg.sender, "The Trend Master NFT is not yours.");
+        ownerOfNfts[msg.sender].push(_tokenId);
         stakingNFT.transferFrom(msg.sender, address(this), _tokenId);
         balanceOf[msg.sender]++;
         stakingTokenIdMapping[_tokenId] = msg.sender;
@@ -110,6 +113,18 @@ contract NFTStakingRewards{
         require(stakingTokenIdMapping[_tokenId] == msg.sender, "The Trend Master NFT is not yours.");
         balanceOf[msg.sender]--;
         totalSupply--;
+        
+        for(uint256 i=0; i< ownerOfNfts[msg.sender].length; i++){
+            if (ownerOfNfts[msg.sender][i] == _tokenId ){
+                delete ownerOfNfts[msg.sender][i];
+                for(uint256 j=i; j < ownerOfNfts[msg.sender].length-1; j++ ){
+                    ownerOfNfts[msg.sender][j] = ownerOfNfts[msg.sender][j+1];
+                }
+                ownerOfNfts[msg.sender].pop();
+                break;
+            }
+        }
+
         stakingNFT.safeTransferFrom(address(this), msg.sender, _tokenId);
 
         emit Withdraw(msg.sender, _tokenId);
@@ -217,6 +232,9 @@ contract NFTStakingRewards{
     function setTrendTokenAddress(address _trendTokenAddress) external onlyOwner{
         rewardsToken = ITrendToken(_trendTokenAddress);
     }
+    function getOwnerOfNfts(address _account) external view returns(uint256[] memory){
+        return ownerOfNfts[_account];
+    } 
 
 }
 

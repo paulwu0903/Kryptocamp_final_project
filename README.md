@@ -188,5 +188,5 @@
 ## Github
 * 智能合約：https://github.com/paulwu0903/Kryptocamp_final_project
 * 前端網頁：https://github.com/stevecyj/krypto-final
-* Demo影片：https://youtube.com/live/mMLlnPzTrxA
+* Demo網頁：https://krypto-final.vercel.app/#/index
 
